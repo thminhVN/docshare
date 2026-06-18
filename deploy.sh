@@ -17,7 +17,9 @@
 # AND update appup.ex for the new version BEFORE deploying. See deploy/HOT_UPGRADE.md.
 #
 # Config: env vars or a gitignored ./deploy.env
-#   SSH_HOST (required)  e.g. docshare@203.0.113.10
+#   SSH_HOST (optional) e.g. docshare@203.0.113.10
+#     - unset: deploy directly on this VPS from the current checkout
+#     - set: rsync this checkout to SSH_HOST and deploy there
 #   BASE     (default /opt/docshare)      SERVICE (default docshare)
 #   SSH_PORT (default 22)                 RESTART (default "sudo systemctl")
 #
@@ -46,12 +48,90 @@ green() { printf '\033[0;32m%s\033[0m\n' "$1"; }
 red()   { printf '\033[0;31m%s\033[0m\n' "$1" >&2; }
 step()  { printf '\n\033[1;36m==> %s\033[0m\n' "$1"; }
 
-# --- Preflight ------------------------------------------------------------------
-[[ -n "$SSH_HOST" ]] || { red "SSH_HOST not set (deploy.env). Aborting."; exit 1; }
-command -v rsync >/dev/null || { red "rsync required locally."; exit 1; }
-
 VSN="$(grep -m1 -E '^\s*version:' mix.exs | sed -E 's/.*"([^"]+)".*/\1/')"
 [[ -n "$VSN" ]] || { red "Could not read version from mix.exs."; exit 1; }
+
+# --- Local VPS deploy -----------------------------------------------------------
+if [[ -z "$SSH_HOST" ]]; then
+  BUILD_DIR="$PWD"
+
+  green "Deploying $APP_NAME v$VSN locally on this VPS ($BASE)"
+
+  step "Checking local prerequisites"
+  mkdir -p "$APP_DIR"
+  for bin in mix elixir; do
+    command -v "$bin" >/dev/null || { red "Missing $bin on server (install Erlang/Elixir)."; exit 1; }
+  done
+  [[ -f "$ENV_FILE" ]] || {
+    red "Missing $ENV_FILE. Copy deploy/env.prod.example there and fill it in."
+    exit 1
+  }
+
+  step "Building release v$VSN locally"
+  export MIX_ENV=prod
+  mix local.hex --force >/dev/null
+  mix local.rebar --force >/dev/null
+  mix deps.get --only prod
+  mix compile
+  mix assets.setup
+  mix assets.deploy
+  mix release --overwrite
+
+  CUR_VSN="$(test -x "$APP_DIR/bin/docshare" && "$APP_DIR/bin/docshare" releases 2>/dev/null | awk 'tolower($0) ~ /permanent/ {print $2}' || true)"
+  CUR_VSN="$(echo "$CUR_VSN" | tr -d '[:space:]')"
+
+  if [[ "$FORCE_FULL" == "1" || -z "$CUR_VSN" ]]; then
+    step "Full deploy: extracting release into $APP_DIR"
+    tar="$BUILD_DIR/_build/prod/${APP_NAME}-${VSN}.tar.gz"
+    [[ -f "$tar" ]] || { red "Release tar not found: $tar"; exit 1; }
+    tar xzf "$tar" -C "$APP_DIR"
+    $RESTART restart "$SERVICE"
+    sleep 2
+    $RESTART --no-pager --full status "$SERVICE" | head -n 10 || true
+    green "Full deploy of v$VSN complete."
+
+  elif [[ "$CUR_VSN" == "$VSN" ]]; then
+    red "Running version is already $VSN. Bump version: in mix.exs (and update appup.ex) to upgrade."
+    red "Or run ./deploy.sh --full to re-extract and restart this same version."
+    exit 1
+
+  else
+    step "Hot upgrade: $CUR_VSN -> $VSN (no restart)"
+    target="$BUILD_DIR/_build/prod/rel/${APP_NAME}/releases/${VSN}/${APP_NAME}"
+    fromto="$APP_DIR/releases/${CUR_VSN}/${APP_NAME}"
+    [[ -f "${target}.rel" ]] || { red "Missing new .rel: ${target}.rel"; exit 1; }
+    [[ -f "${fromto}.rel" ]] || { red "Missing old .rel: ${fromto}.rel (is $CUR_VSN still installed?)"; exit 1; }
+
+    echo "-> generating relup ${CUR_VSN} -> ${VSN}"
+    mix forecastle.relup --target "$target" --fromto "$fromto" --outdir "$BUILD_DIR"
+    [[ -f "$BUILD_DIR/relup" ]] || { red "relup was not generated (check appup.ex)."; exit 1; }
+
+    echo "-> rebuilding release to embed relup"
+    mix release --overwrite >/dev/null
+
+    echo "-> installing into the running node"
+    tar="$BUILD_DIR/_build/prod/${APP_NAME}-${VSN}.tar.gz"
+    cp "$tar" "$APP_DIR/releases/${APP_NAME}-${VSN}.tar.gz"
+    "$APP_DIR/bin/${APP_NAME}" unpack "$VSN"
+    "$APP_DIR/bin/${APP_NAME}" install "$VSN"
+    "$APP_DIR/bin/${APP_NAME}" commit "$VSN"
+
+    echo "-> current releases:"
+    "$APP_DIR/bin/${APP_NAME}" releases
+    rm -f "$BUILD_DIR/relup"
+    green "Hot upgrade to v$VSN complete (no downtime)."
+  fi
+
+  green "
+App:  https://${PHX_HOST:-docshare.gatetroy.com}
+Logs: journalctl -u $SERVICE -f
+"
+  exit 0
+fi
+
+# --- Preflight ------------------------------------------------------------------
+command -v rsync >/dev/null || { red "rsync required locally."; exit 1; }
+
 green "Deploying $APP_NAME v$VSN to $SSH_HOST ($BASE)"
 
 SSH=(ssh -p "$SSH_PORT" "$SSH_HOST")
