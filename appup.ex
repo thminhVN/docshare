@@ -22,4 +22,10 @@
 #    [{~c"0.1.0", [{:load_module, DocshareWeb.DocumentLive.Show}]}],
 #    [{~c"0.1.0", [{:load_module, DocshareWeb.DocumentLive.Show}]}]}
 
-{~c"0.1.0", [], []}
+{~c"0.1.1",
+ [{~c"0.1.0", [
+   {:load_module, DocshareWeb.UserRegistrationLive}
+ ]}],
+ [{~c"0.1.0", [
+   {:load_module, DocshareWeb.UserRegistrationLive}
+ ]}]}

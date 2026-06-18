@@ -2,8 +2,8 @@ import Config
 
 # Configure your database
 config :docshare, Docshare.Repo,
-  username: System.get_env("USER") || "postgres",
-  password: System.get_env("PGPASSWORD") || "",
+  username: "postgres",
+  password: "",
   hostname: "localhost",
   database: "docshare_dev",
   stacktrace: true,
