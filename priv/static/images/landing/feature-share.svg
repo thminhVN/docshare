@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="640" viewBox="0 0 900 640" fill="none" role="img" aria-label="SaaS collaboration illustration">
+
+<defs>
+  <linearGradient id="gIndigo" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#6366f1"/>
+    <stop offset="100%" stop-color="#4f46e5"/>
+  </linearGradient>
+  <linearGradient id="gLav" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#eef2ff"/>
+    <stop offset="100%" stop-color="#f8f7ff"/>
+  </linearGradient>
+  <linearGradient id="gSoft" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#ffffff"/>
+    <stop offset="100%" stop-color="#eef2ff"/>
+  </linearGradient>
+  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#4f46e5" flood-opacity="0.13"/>
+  </filter>
+  <filter id="smallShadow" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#312e81" flood-opacity="0.12"/>
+  </filter>
+  <style>
+    .line{fill:#c7d2fe}.line2{fill:#e0e7ff}.dark{fill:#4f46e5}.mid{fill:#6366f1}.lav{fill:#eef2ff}
+    .stroke{stroke:#4f46e5;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.softStroke{stroke:#c7d2fe;stroke-width:2;stroke-linecap:round}
+    .uiText{font-family:Inter,Arial,sans-serif;font-weight:700;fill:#4f46e5}.tiny{font-family:Inter,Arial,sans-serif;font-weight:700;fill:#6366f1;font-size:22px}
+  </style>
+</defs>
+
+<rect width="900" height="640" fill="#ffffff"/>
+
+<circle cx="126" cy="112" r="82" fill="#eef2ff"/>
+<circle cx="780" cy="532" r="96" fill="#f5f3ff"/>
+<path d="M50 552 C170 500 270 594 394 542 C520 489 610 570 740 518 C798 494 840 504 872 493" stroke="#eef2ff" stroke-width="28" stroke-linecap="round" opacity="0.9"/>
+
+<!-- connection lines -->
+<g opacity="0.7">
+  <path d="M450 220 C540 150 620 134 704 168" stroke="#c7d2fe" stroke-width="4" stroke-linecap="round"/>
+  <path d="M552 328 C664 308 724 360 786 442" stroke="#c7d2fe" stroke-width="4" stroke-linecap="round"/>
+  <path d="M360 360 C270 332 206 370 154 444" stroke="#c7d2fe" stroke-width="4" stroke-linecap="round"/>
+  <path d="M432 442 C448 520 500 555 594 568" stroke="#c7d2fe" stroke-width="4" stroke-linecap="round"/>
+</g>
+
+<!-- avatar nodes -->
+<g filter="url(#smallShadow)">
+  <circle cx="716" cy="170" r="46" fill="#ffffff" stroke="#c7d2fe" stroke-width="3"/>
+  <circle cx="716" cy="158" r="14" fill="#6366f1"/><path d="M685 195 C701 173 730 173 747 195" fill="#6366f1" opacity="0.88"/>
+</g>
+<g filter="url(#smallShadow)">
+  <circle cx="792" cy="452" r="43" fill="#ffffff" stroke="#c7d2fe" stroke-width="3"/>
+  <circle cx="792" cy="441" r="13" fill="#4f46e5"/><path d="M764 476 C780 455 805 455 821 476" fill="#4f46e5" opacity="0.88"/>
+</g>
+<g filter="url(#smallShadow)">
+  <circle cx="146" cy="456" r="43" fill="#ffffff" stroke="#c7d2fe" stroke-width="3"/>
+  <circle cx="146" cy="445" r="13" fill="#6366f1"/><path d="M118 480 C134 459 159 459 175 480" fill="#6366f1" opacity="0.88"/>
+</g>
+<g filter="url(#smallShadow)">
+  <circle cx="604" cy="572" r="43" fill="#ffffff" stroke="#c7d2fe" stroke-width="3"/>
+  <circle cx="604" cy="561" r="13" fill="#4f46e5"/><path d="M576 596 C592 575 617 575 633 596" fill="#4f46e5" opacity="0.88"/>
+</g>
+
+<!-- envelope -->
+<g filter="url(#shadow)">
+  <path d="M235 257 H574 C611 257 642 288 642 325 V505 C642 542 611 573 574 573 H235 C198 573 167 542 167 505 V325 C167 288 198 257 235 257Z" fill="#ffffff" stroke="#dbe2ff" stroke-width="4"/>
+  <path d="M178 299 L398 445 C405 450 415 450 422 445 L631 302" fill="#eef2ff"/>
+  <path d="M178 299 L398 445 C405 450 415 450 422 445 L631 302" stroke="#c7d2fe" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M179 538 L333 398" stroke="#c7d2fe" stroke-width="4" stroke-linecap="round"/>
+  <path d="M629 538 L482 398" stroke="#c7d2fe" stroke-width="4" stroke-linecap="round"/>
+</g>
+
+<!-- document emerging -->
+<g filter="url(#smallShadow)">
+  <rect x="316" y="119" width="235" height="294" rx="28" fill="url(#gSoft)" stroke="#e0e7ff" stroke-width="3" transform="rotate(-6 433.5 266)"/>
+  <rect x="354" y="171" width="128" height="18" rx="9" fill="#4f46e5" transform="rotate(-6 418 180)"/>
+  <rect x="349" y="222" width="162" height="10" rx="5" fill="#c7d2fe" transform="rotate(-6 430 227)"/>
+  <rect x="353" y="250" width="130" height="10" rx="5" fill="#e0e7ff" transform="rotate(-6 418 255)"/>
+  <rect x="358" y="278" width="150" height="10" rx="5" fill="#e0e7ff" transform="rotate(-6 433 283)"/>
+  <rect x="363" y="332" width="112" height="16" rx="8" fill="#6366f1" opacity="0.2" transform="rotate(-6 419 340)"/>
+</g>
+
+<!-- invite link chip -->
+<g filter="url(#smallShadow)">
+  <rect x="360" y="376" width="304" height="78" rx="39" fill="#ffffff" stroke="#c7d2fe" stroke-width="3"/>
+  <circle cx="405" cy="415" r="22" fill="#eef2ff"/>
+  <path d="M397 414 C397 407 402 402 409 402 H419 C426 402 431 407 431 414 C431 421 426 426 419 426 H410" stroke="#6366f1" stroke-width="5" stroke-linecap="round"/>
+  <path d="M414 415 C414 422 409 427 402 427 H392 C385 427 380 422 380 415 C380 408 385 403 392 403 H400" stroke="#4f46e5" stroke-width="5" stroke-linecap="round"/>
+  <rect x="445" y="399" width="146" height="12" rx="6" fill="#c7d2fe"/>
+  <rect x="445" y="424" width="88" height="12" rx="6" fill="#e0e7ff"/>
+  <circle cx="623" cy="415" r="20" fill="#6366f1"/>
+  <path d="M616 415 H630 M623 408 V422" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+</g>
+
+</svg>

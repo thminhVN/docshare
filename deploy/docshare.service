@@ -1,0 +1,26 @@
+[Unit]
+Description=DocShare (Phoenix/Elixir, hot-upgradeable release)
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=simple
+# Run as the same user that owns the dirs and builds/installs the release,
+# so `bin/docshare install/commit` can RPC into this running node.
+User=docshare
+Group=docshare
+WorkingDirectory=/opt/docshare
+EnvironmentFile=/opt/docshare/.env
+# The extracted release root (releases/ accumulate here for hot upgrades).
+ExecStart=/opt/docshare/app/bin/docshare start
+ExecStop=/opt/docshare/app/bin/docshare stop
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=30
+NoNewPrivileges=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,154 @@
+<.flash_group flash={@flash} />
+
+<%!-- Hero --%>
+<section class="mx-auto max-w-6xl px-4 pt-12 pb-16 lg:pt-20">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+    <div>
+      <span class="inline-block rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold px-3 py-1 mb-4">
+        Collaborative HTML review
+      </span>
+      <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-zinc-900 leading-tight">
+        Comment on any part of your HTML — together, in real time.
+      </h1>
+      <p class="mt-5 text-lg text-zinc-600">
+        Host an HTML document online, invite people by email, and collect feedback
+        on each section. Keep versions, compare changes, and export every comment
+        as a prompt to fix the doc with AI.
+      </p>
+
+      <div class="mt-8 flex flex-wrap gap-3">
+        <%= if @current_user do %>
+          <.link
+            navigate={~p"/docs"}
+            class="rounded-lg bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-500"
+          >
+            Go to my documents
+          </.link>
+        <% else %>
+          <.link
+            navigate={~p"/users/register"}
+            class="rounded-lg bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-500"
+          >
+            Get started — it's free
+          </.link>
+          <.link
+            navigate={~p"/users/log_in"}
+            class="rounded-lg border border-zinc-300 px-6 py-3 font-semibold text-zinc-700 hover:bg-zinc-50"
+          >
+            Log in
+          </.link>
+        <% end %>
+      </div>
+
+      <p class="mt-4 text-sm text-zinc-400">No setup. Paste HTML or upload a file.</p>
+    </div>
+
+    <div>
+      <img
+        src={~p"/images/landing/hero.svg"}
+        alt="Team reviewing an HTML document with inline comments"
+        class="w-full rounded-2xl shadow-lg ring-1 ring-zinc-100"
+        width="1200"
+        height="900"
+      />
+    </div>
+  </div>
+</section>
+
+<%!-- Showcase screenshot --%>
+<section class="mx-auto max-w-6xl px-4 pb-16">
+  <img
+    src={~p"/images/landing/showcase.svg"}
+    alt="DocShare document view with the comment panel"
+    class="w-full rounded-2xl shadow-xl ring-1 ring-zinc-200"
+    width="1600"
+    height="900"
+  />
+</section>
+
+<%!-- Features --%>
+<section class="mx-auto max-w-6xl px-4 pb-20">
+  <div class="text-center max-w-2xl mx-auto mb-12">
+    <h2 class="text-3xl font-bold tracking-tight text-zinc-900">Everything you need to review docs</h2>
+    <p class="mt-3 text-zinc-600">
+      Built for design reviews, reports, and AI-generated pages that need a human pass.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <article class="rounded-2xl border border-zinc-100 overflow-hidden bg-white shadow-sm">
+      <img src={~p"/images/landing/feature-comments.svg"} alt="Per-part commenting" class="w-full" width="900" height="640" />
+      <div class="p-5">
+        <h3 class="font-semibold text-zinc-900">Comment on each part</h3>
+        <p class="mt-1 text-sm text-zinc-600">
+          Click any heading, paragraph, list item, or table cell to start a thread — comments stay anchored to that block.
+        </p>
+      </div>
+    </article>
+
+    <article class="rounded-2xl border border-zinc-100 overflow-hidden bg-white shadow-sm">
+      <img src={~p"/images/landing/feature-versions.svg"} alt="Version compare" class="w-full" width="900" height="640" />
+      <div class="p-5">
+        <h3 class="font-semibold text-zinc-900">Versions & rendered diff</h3>
+        <p class="mt-1 text-sm text-zinc-600">
+          Keep every version. Compare two of them as a rendered redline and jump between changes from a step sidebar.
+        </p>
+      </div>
+    </article>
+
+    <article class="rounded-2xl border border-zinc-100 overflow-hidden bg-white shadow-sm">
+      <img src={~p"/images/landing/feature-share.svg"} alt="Share by email" class="w-full" width="900" height="640" />
+      <div class="p-5">
+        <h3 class="font-semibold text-zinc-900">Share by email</h3>
+        <p class="mt-1 text-sm text-zinc-600">
+          Invite collaborators by email. They get a link and sign in to comment — updates appear live for everyone.
+        </p>
+      </div>
+    </article>
+  </div>
+</section>
+
+<%!-- How it works --%>
+<section class="bg-zinc-50 border-y border-zinc-100">
+  <div class="mx-auto max-w-5xl px-4 py-16">
+    <h2 class="text-2xl font-bold text-center text-zinc-900 mb-10">How it works</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
+      <div>
+        <div class="mx-auto w-10 h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center mb-3">1</div>
+        <div class="font-semibold text-zinc-900">Upload</div>
+        <p class="text-sm text-zinc-600 mt-1">Paste HTML or upload an <code>.html</code> file.</p>
+      </div>
+      <div>
+        <div class="mx-auto w-10 h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center mb-3">2</div>
+        <div class="font-semibold text-zinc-900">Share</div>
+        <p class="text-sm text-zinc-600 mt-1">Invite collaborators by email.</p>
+      </div>
+      <div>
+        <div class="mx-auto w-10 h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center mb-3">3</div>
+        <div class="font-semibold text-zinc-900">Comment & iterate</div>
+        <p class="text-sm text-zinc-600 mt-1">Discuss each part, version it, export to fix with AI.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%!-- CTA --%>
+<section class="mx-auto max-w-4xl px-4 py-20 text-center">
+  <h2 class="text-3xl font-bold tracking-tight text-zinc-900">Start reviewing in minutes</h2>
+  <p class="mt-3 text-zinc-600">Create a document, share the link, and watch the comments roll in.</p>
+  <div class="mt-8">
+    <.link
+      navigate={if @current_user, do: ~p"/docs", else: ~p"/users/register"}
+      class="rounded-lg bg-indigo-600 px-7 py-3 text-white font-semibold hover:bg-indigo-500"
+    >
+      {if @current_user, do: "Go to my documents", else: "Get started"}
+    </.link>
+  </div>
+</section>
+
+<footer class="border-t border-zinc-100">
+  <div class="mx-auto max-w-6xl px-4 py-8 text-sm text-zinc-400 flex items-center justify-between">
+    <span>DocShare</span>
+    <span>Collaborative HTML review</span>
+  </div>
+</footer>

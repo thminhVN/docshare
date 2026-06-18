@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" class="[scrollbar-gutter:stable]">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content={get_csrf_token()} />
+    <.live_title default="DocShare" suffix=" · DocShare">
+      {assigns[:page_title]}
+    </.live_title>
+    <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
+    </script>
+  </head>
+  <body class="bg-white">
+    <header class="border-b border-zinc-100 bg-white">
+      <div class="mx-auto w-full max-w-[1700px] flex items-center justify-between px-4 sm:px-6 lg:px-8 2xl:px-12 py-3">
+        <.link href={~p"/"} class="text-base font-bold tracking-tight text-zinc-900">
+          DocShare
+        </.link>
+        <nav class="flex items-center gap-4 text-[0.8125rem] leading-6">
+          <%= if @current_user do %>
+            <.link href={~p"/docs"} class="text-indigo-700 font-semibold hover:text-indigo-500">
+              My documents
+            </.link>
+            <span class="text-zinc-500">{@current_user.email}</span>
+            <.link href={~p"/users/settings"} class="text-zinc-900 font-semibold hover:text-zinc-700">
+              Settings
+            </.link>
+            <.link
+              href={~p"/users/log_out"}
+              method="delete"
+              class="text-zinc-900 font-semibold hover:text-zinc-700"
+            >
+              Log out
+            </.link>
+          <% else %>
+            <.link href={~p"/users/register"} class="text-zinc-900 font-semibold hover:text-zinc-700">
+              Register
+            </.link>
+            <.link href={~p"/users/log_in"} class="text-zinc-900 font-semibold hover:text-zinc-700">
+              Log in
+            </.link>
+          <% end %>
+        </nav>
+      </div>
+    </header>
+    {@inner_content}
+    <footer class="border-t border-zinc-100 bg-white">
+      <div class="mx-auto w-full max-w-[1700px] px-4 sm:px-6 lg:px-8 2xl:px-12 py-4 text-center text-sm text-zinc-500">
+        Made by
+        <a
+          href="https://gatetroy.com"
+          target="_blank"
+          rel="noopener"
+          title="DocShare — built by gatetroy.com"
+          class="font-semibold text-indigo-700 hover:text-indigo-500 hover:underline"
+        >
+          gatetroy.com
+        </a>
+      </div>
+    </footer>
+  </body>
+</html>
