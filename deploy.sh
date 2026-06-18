@@ -62,12 +62,17 @@ mix assets.setup
 mix assets.deploy
 mix release --overwrite
 
-CUR_VSN="$(test -x "$APP_DIR/bin/docshare" && "$APP_DIR/bin/docshare" releases 2>/dev/null | awk 'tolower($0) ~ /permanent/ {print $2}' || true)"
+CUR_VSN="$(test -x "$APP_DIR/bin/docshare" && "$APP_DIR/bin/docshare" releases 2>/dev/null | awk '{ for (i = 1; i <= NF; i++) if (tolower($i) == "permanent" && i > 1) { print $(i - 1); exit } }' || true)"
 CUR_VSN="$(echo "$CUR_VSN" | tr -d '[:space:]')"
 
-if [[ "$FORCE_FULL" == "1" || -z "$CUR_VSN" ]]; then
+if [[ "$FORCE_FULL" == "1" || -z "$CUR_VSN" || "$CUR_VSN" == "$VSN" ]]; then
   # ---------------------- FULL DEPLOY (first install / forced) ------------------
-  step "Full deploy: extracting release into $APP_DIR"
+  if [[ "$CUR_VSN" == "$VSN" ]]; then
+    step "Full redeploy: refreshing v$VSN in $APP_DIR"
+  else
+    step "Full deploy: extracting release into $APP_DIR"
+  fi
+
   tar="$BUILD_DIR/_build/prod/${APP_NAME}-${VSN}.tar.gz"
   [[ -f "$tar" ]] || { red "Release tar not found: $tar"; exit 1; }
   tar xzf "$tar" -C "$APP_DIR"
@@ -75,11 +80,6 @@ if [[ "$FORCE_FULL" == "1" || -z "$CUR_VSN" ]]; then
   sleep 2
   $RESTART --no-pager --full status "$SERVICE" | head -n 10 || true
   green "Full deploy of v$VSN complete."
-
-elif [[ "$CUR_VSN" == "$VSN" ]]; then
-  red "Running version is already $VSN. Bump version: in mix.exs (and update appup.ex) to upgrade."
-  red "Or run ./deploy.sh --full to re-extract and restart this same version."
-  exit 1
 
 else
   # ---------------------- HOT UPGRADE (relup, no restart) ----------------------
