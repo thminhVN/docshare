@@ -31,10 +31,6 @@ if config_env() != :test && resend_api_key do
     api_key: resend_api_key
 
   config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: Docshare.Finch
-
-  if from = System.get_env("MAIL_FROM") do
-    config :docshare, :mail_from, from
-  end
 end
 
 # config/runtime.exs is executed for all environments, including

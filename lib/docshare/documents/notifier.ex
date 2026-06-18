@@ -104,8 +104,7 @@ defmodule Docshare.Documents.Notifier do
     |> Phoenix.HTML.safe_to_string()
   end
 
-  # Sender address. Resend requires this to be a verified domain. Override with
-  # the MAIL_FROM env var, e.g. MAIL_FROM="DocShare <noreply@gatetroy.com>".
+  # Sender address. Resend requires this to be a verified domain.
   defp mail_from do
     case Application.get_env(:docshare, :mail_from) do
       {_name, _addr} = tuple -> tuple
