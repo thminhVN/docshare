@@ -104,14 +104,13 @@ defmodule Docshare.Documents.Notifier do
     |> Phoenix.HTML.safe_to_string()
   end
 
-  # Sender address. Resend requires this to be a verified domain (or the shared
-  # `onboarding@resend.dev` sandbox sender). Override with the MAIL_FROM env var,
-  # e.g. MAIL_FROM="DocShare <noreply@gatetroy.com>".
+  # Sender address. Resend requires this to be a verified domain. Override with
+  # the MAIL_FROM env var, e.g. MAIL_FROM="DocShare <noreply@gatetroy.com>".
   defp mail_from do
     case Application.get_env(:docshare, :mail_from) do
       {_name, _addr} = tuple -> tuple
       address when is_binary(address) -> parse_from(address)
-      _ -> {"DocShare", "onboarding@resend.dev"}
+      _ -> {"DocShare", "noreply@gatetroy.com"}
     end
   end
 

@@ -9,7 +9,8 @@ import Config
 
 config :docshare,
   ecto_repos: [Docshare.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  mail_from: {"DocShare", "noreply@gatetroy.com"}
 
 # Configures the endpoint
 config :docshare, DocshareWeb.Endpoint,

@@ -21,7 +21,7 @@ defmodule Docshare.Accounts.UserNotifier do
     case Application.get_env(:docshare, :mail_from) do
       {_name, _addr} = tuple -> tuple
       address when is_binary(address) -> parse_from(address)
-      _ -> {"DocShare", "onboarding@resend.dev"}
+      _ -> {"DocShare", "noreply@gatetroy.com"}
     end
   end
 

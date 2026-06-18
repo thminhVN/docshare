@@ -114,7 +114,10 @@ defmodule DocshareWeb.DocumentLiveTest do
     assert html =~ "Invitation sent to friend@example.com"
     assert [%{email: "friend@example.com"}] = Documents.list_collaborators(doc)
 
-    assert_email_sent(to: "friend@example.com")
+    assert_email_sent(
+      to: "friend@example.com",
+      from: {"DocShare", "noreply@gatetroy.com"}
+    )
   end
 
   test "owner can resend an invitation to an existing collaborator", %{conn: conn, user: user} do
