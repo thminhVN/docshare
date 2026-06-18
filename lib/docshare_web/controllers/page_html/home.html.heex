@@ -69,7 +69,9 @@
 <%!-- Features --%>
 <section class="mx-auto max-w-6xl px-4 pb-20">
   <div class="text-center max-w-2xl mx-auto mb-12">
-    <h2 class="text-3xl font-bold tracking-tight text-zinc-900">Everything you need to review docs</h2>
+    <h2 class="text-3xl font-bold tracking-tight text-zinc-900">
+      Everything you need to review docs
+    </h2>
     <p class="mt-3 text-zinc-600">
       Built for design reviews, reports, and AI-generated pages that need a human pass.
     </p>
@@ -77,7 +79,13 @@
 
   <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
     <article class="rounded-2xl border border-zinc-100 overflow-hidden bg-white shadow-sm">
-      <img src={~p"/images/landing/feature-comments.svg"} alt="Per-part commenting" class="w-full" width="900" height="640" />
+      <img
+        src={~p"/images/landing/feature-comments.svg"}
+        alt="Per-part commenting"
+        class="w-full"
+        width="900"
+        height="640"
+      />
       <div class="p-5">
         <h3 class="font-semibold text-zinc-900">Comment on each part</h3>
         <p class="mt-1 text-sm text-zinc-600">
@@ -87,7 +95,13 @@
     </article>
 
     <article class="rounded-2xl border border-zinc-100 overflow-hidden bg-white shadow-sm">
-      <img src={~p"/images/landing/feature-versions.svg"} alt="Version compare" class="w-full" width="900" height="640" />
+      <img
+        src={~p"/images/landing/feature-versions.svg"}
+        alt="Version compare"
+        class="w-full"
+        width="900"
+        height="640"
+      />
       <div class="p-5">
         <h3 class="font-semibold text-zinc-900">Versions & rendered diff</h3>
         <p class="mt-1 text-sm text-zinc-600">
@@ -97,7 +111,13 @@
     </article>
 
     <article class="rounded-2xl border border-zinc-100 overflow-hidden bg-white shadow-sm">
-      <img src={~p"/images/landing/feature-share.svg"} alt="Share by email" class="w-full" width="900" height="640" />
+      <img
+        src={~p"/images/landing/feature-share.svg"}
+        alt="Share by email"
+        class="w-full"
+        width="900"
+        height="640"
+      />
       <div class="p-5">
         <h3 class="font-semibold text-zinc-900">Share by email</h3>
         <p class="mt-1 text-sm text-zinc-600">
@@ -110,23 +130,85 @@
 
 <%!-- How it works --%>
 <section class="bg-zinc-50 border-y border-zinc-100">
-  <div class="mx-auto max-w-5xl px-4 py-16">
+  <div class="mx-auto max-w-6xl px-4 py-16">
     <h2 class="text-2xl font-bold text-center text-zinc-900 mb-10">How it works</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
-      <div>
-        <div class="mx-auto w-10 h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center mb-3">1</div>
-        <div class="font-semibold text-zinc-900">Upload</div>
-        <p class="text-sm text-zinc-600 mt-1">Paste HTML or upload an <code>.html</code> file.</p>
-      </div>
-      <div>
-        <div class="mx-auto w-10 h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center mb-3">2</div>
-        <div class="font-semibold text-zinc-900">Share</div>
-        <p class="text-sm text-zinc-600 mt-1">Invite collaborators by email.</p>
-      </div>
-      <div>
-        <div class="mx-auto w-10 h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center mb-3">3</div>
-        <div class="font-semibold text-zinc-900">Comment & iterate</div>
-        <p class="text-sm text-zinc-600 mt-1">Discuss each part, version it, export to fix with AI.</p>
+    <div class="how-steps">
+      <input class="sr-only" type="radio" name="how-step" id="how-step-upload" checked />
+      <input class="sr-only" type="radio" name="how-step" id="how-step-share" />
+      <input class="sr-only" type="radio" name="how-step" id="how-step-comment" />
+
+      <div class="how-steps-layout grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center">
+        <ol class="divide-y divide-zinc-200">
+          <li>
+            <label
+              for="how-step-upload"
+              class="how-step how-step-upload block cursor-pointer rounded-lg px-4 py-6 transition"
+            >
+              <span class="flex items-baseline gap-4 text-zinc-900">
+                <span class="how-step-number text-5xl font-black leading-none text-indigo-600">1</span>
+                <span class="text-5xl font-light leading-none text-zinc-300">|</span>
+                <span class="how-step-title text-3xl font-bold leading-tight">Upload</span>
+              </span>
+              <span class="mt-3 block text-sm leading-6 text-zinc-600">
+                Paste HTML or upload an <code>.html</code> file.
+              </span>
+            </label>
+          </li>
+          <li>
+            <label
+              for="how-step-share"
+              class="how-step how-step-share block cursor-pointer rounded-lg px-4 py-6 transition"
+            >
+              <span class="flex items-baseline gap-4 text-zinc-900">
+                <span class="how-step-number text-5xl font-black leading-none text-indigo-600">2</span>
+                <span class="text-5xl font-light leading-none text-zinc-300">|</span>
+                <span class="how-step-title text-3xl font-bold leading-tight">Share</span>
+              </span>
+              <span class="mt-3 block text-sm leading-6 text-zinc-600">
+                Invite collaborators by email.
+              </span>
+            </label>
+          </li>
+          <li>
+            <label
+              for="how-step-comment"
+              class="how-step how-step-comment block cursor-pointer rounded-lg px-4 py-6 transition"
+            >
+              <span class="flex items-baseline gap-4 text-zinc-900">
+                <span class="how-step-number text-5xl font-black leading-none text-indigo-600">3</span>
+                <span class="text-5xl font-light leading-none text-zinc-300">|</span>
+                <span class="how-step-title text-3xl font-bold leading-tight">Comment & iterate</span>
+              </span>
+              <span class="mt-3 block text-sm leading-6 text-zinc-600">
+                Discuss each part, version it, export to fix with AI.
+              </span>
+            </label>
+          </li>
+        </ol>
+
+        <div class="how-step-preview relative aspect-[1487/1058] overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-zinc-100">
+          <img
+            src={~p"/images/landing/how-upload.png"}
+            alt="Upload an HTML document"
+            class="how-step-image how-step-image-upload absolute inset-0 h-full w-full object-cover"
+            width="1487"
+            height="1058"
+          />
+          <img
+            src={~p"/images/landing/how-share.png"}
+            alt="Share a document by email"
+            class="how-step-image how-step-image-share absolute inset-0 h-full w-full object-cover"
+            width="1487"
+            height="1058"
+          />
+          <img
+            src={~p"/images/landing/how-comment-iterate.png"}
+            alt="Comment on a document and iterate"
+            class="how-step-image how-step-image-comment absolute inset-0 h-full w-full object-cover"
+            width="1487"
+            height="1058"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -135,7 +217,9 @@
 <%!-- CTA --%>
 <section class="mx-auto max-w-4xl px-4 py-20 text-center">
   <h2 class="text-3xl font-bold tracking-tight text-zinc-900">Start reviewing in minutes</h2>
-  <p class="mt-3 text-zinc-600">Create a document, share the link, and watch the comments roll in.</p>
+  <p class="mt-3 text-zinc-600">
+    Create a document, share the link, and watch the comments roll in.
+  </p>
   <div class="mt-8">
     <.link
       navigate={if @current_user, do: ~p"/docs", else: ~p"/users/register"}

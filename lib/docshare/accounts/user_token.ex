@@ -8,7 +8,7 @@ defmodule Docshare.Accounts.UserToken do
 
   # It is very important to keep the reset password token expiry short,
   # since someone with access to the email may take over the account.
-  @reset_password_validity_in_days 1
+  @reset_password_validity_in_hours 24
   @confirm_validity_in_days 7
   @change_email_validity_in_days 7
   @session_validity_in_days 60
@@ -111,13 +111,7 @@ defmodule Docshare.Accounts.UserToken do
     case Base.url_decode64(token, padding: false) do
       {:ok, decoded_token} ->
         hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
-        days = days_for_context(context)
-
-        query =
-          from token in by_token_and_context_query(hashed_token, context),
-            join: user in assoc(token, :user),
-            where: token.inserted_at > ago(^days, "day") and token.sent_to == user.email,
-            select: user
+        query = email_token_query(hashed_token, context)
 
         {:ok, query}
 
@@ -126,8 +120,23 @@ defmodule Docshare.Accounts.UserToken do
     end
   end
 
-  defp days_for_context("confirm"), do: @confirm_validity_in_days
-  defp days_for_context("reset_password"), do: @reset_password_validity_in_days
+  defp email_token_query(hashed_token, "confirm") do
+    from token in by_token_and_context_query(hashed_token, "confirm"),
+      join: user in assoc(token, :user),
+      where:
+        token.inserted_at > ago(@confirm_validity_in_days, "day") and
+          token.sent_to == user.email,
+      select: user
+  end
+
+  defp email_token_query(hashed_token, "reset_password") do
+    from token in by_token_and_context_query(hashed_token, "reset_password"),
+      join: user in assoc(token, :user),
+      where:
+        token.inserted_at > ago(@reset_password_validity_in_hours, "hour") and
+          token.sent_to == user.email,
+      select: user
+  end
 
   @doc """
   Checks if the token is valid and returns its underlying lookup query.

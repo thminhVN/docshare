@@ -57,6 +57,60 @@ same filename, or use `.png`/`.webp` and update the `src` in `home.html.heex`).
 
 ---
 
+## How it works item image system prompt
+
+Use this as the **system prompt** in ChatGPT before generating the three "How it
+works" item images:
+
+> You are generating a cohesive set of small SaaS landing-page illustrations for
+> DocShare, a collaborative HTML document review app. Keep every image consistent
+> with the current site theme: clean white or very pale zinc background, indigo
+> primary accents (#4f46e5 / #6366f1), soft lavender support color (#eef2ff),
+> neutral zinc text-like shapes, crisp flat-vector geometry, subtle soft shadows,
+> rounded rectangles around 8-16px, generous whitespace, and a calm professional
+> product feel. Do not include readable text, logos, watermarks, fake UI labels,
+> or distorted lettering; use abstract bars and simple UI shapes instead. Avoid
+> dark backgrounds, 3D rendering, photorealism, busy gradients, decorative orbs,
+> cartoon mascots, and unrelated objects. The three outputs must feel like one
+> matching icon/spot-illustration family.
+
+Use these images if you decide to replace the current numbered circles in the
+`How it works` section with visual assets. Suggested output size: **900 x 640**
+for each image, transparent or white background.
+
+### How it works 1 — Upload
+
+> Small clean SaaS spot illustration for the "Upload" step. Show a simplified
+> browser/document upload area with a centered HTML file card moving upward into
+> a drop zone. The file card should suggest `.html` using abstract code brackets
+> or simple code-line bars, not readable text. Add a small upward arrow icon and
+> a few document content blocks. Use the DocShare style: white/pale zinc
+> background, indigo accents, soft lavender highlights, neutral gray abstract
+> text bars, crisp flat vector, subtle shadow, generous whitespace.
+
+### How it works 2 — Share
+
+> Small clean SaaS spot illustration for the "Share" step. Show a document card
+> sending an invitation through email to two or three collaborator avatar circles.
+> Include a simple envelope shape, link chip, and light connector lines, but no
+> readable text. The composition should feel easy and collaborative, matching the
+> same flat vector DocShare style: white/pale zinc background, indigo accents,
+> soft lavender highlights, neutral gray UI bars, subtle shadow, crisp edges,
+> generous whitespace.
+
+### How it works 3 — Comment & iterate
+
+> Small clean SaaS spot illustration for the "Comment & iterate" step. Show a
+> document section with one highlighted block, a comment bubble anchored to that
+> block, and a compact version/diff indicator suggesting iteration. Use tiny
+> abstract lines for comments and document content, plus one small AI/export
+> sparkle or wand-like icon if it stays subtle. Keep it consistent with DocShare:
+> white/pale zinc background, indigo highlight, lavender accents, restrained
+> green/red diff marks, flat vector, subtle shadow, no readable text, generous
+> whitespace.
+
+---
+
 ## After generating
 
 1. Save each file to its path above (overwrite the placeholder).

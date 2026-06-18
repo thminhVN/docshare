@@ -8,12 +8,28 @@ defmodule Docshare.Accounts.UserNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"Docshare", "contact@example.com"})
+      |> from(mail_from())
       |> subject(subject)
       |> text_body(body)
 
     with {:ok, _metadata} <- Mailer.deliver(email) do
       {:ok, email}
+    end
+  end
+
+  defp mail_from do
+    case Application.get_env(:docshare, :mail_from) do
+      {_name, _addr} = tuple -> tuple
+      address when is_binary(address) -> parse_from(address)
+      _ -> {"DocShare", "onboarding@resend.dev"}
+    end
+  end
+
+  defp parse_from(address) do
+    case Regex.run(~r/^\s*(.*?)\s*<\s*(.+?)\s*>\s*$/, address) do
+      [_, "", email] -> email
+      [_, name, email] -> {name, email}
+      _ -> address
     end
   end
 
@@ -47,9 +63,11 @@ defmodule Docshare.Accounts.UserNotifier do
 
     Hi #{user.email},
 
-    You can reset your password by visiting the URL below:
+    You can create a new password by visiting the URL below:
 
     #{url}
+
+    This link expires in 24 hours.
 
     If you didn't request this change, please ignore this.
 

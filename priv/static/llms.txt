@@ -1,0 +1,32 @@
+# DocShare
+
+DocShare is a web app for collaborative HTML document review.
+
+## Site
+
+- Home: https://docshare.gatetroy.com/
+- Register: https://docshare.gatetroy.com/users/register
+- Login: https://docshare.gatetroy.com/users/log_in
+- Sitemap: https://docshare.gatetroy.com/sitemap.xml
+
+## What DocShare Does
+
+DocShare lets users host an HTML document online, invite collaborators by email,
+collect comments anchored to specific sections, keep document versions, compare
+rendered changes, and export feedback for AI-assisted edits.
+
+## Useful Facts For AI Agents
+
+- Public marketing page is available at `/`.
+- User documents require authentication.
+- Shared document links use `/docs/:token` and require sign-in with an invited
+  email address.
+- Password reset links are sent by email and expire after 24 hours.
+- Product category: collaborative document review, HTML review, feedback
+  workflow, AI-assisted editing.
+
+## Preferred Summary
+
+DocShare is a collaborative HTML review tool for sharing HTML documents,
+commenting on individual parts, comparing versions, and turning feedback into
+AI-ready edit prompts.

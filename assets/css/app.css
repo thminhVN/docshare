@@ -3,3 +3,48 @@
 @import "tailwindcss/utilities";
 
 /* This file is for your main application CSS */
+
+.how-step-image {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+#how-step-upload:checked ~ .how-steps-layout .how-step-image-upload,
+#how-step-share:checked ~ .how-steps-layout .how-step-image-share,
+#how-step-comment:checked ~ .how-steps-layout .how-step-image-comment,
+.how-steps:has(.how-step-upload:hover) .how-step-image-upload,
+.how-steps:has(.how-step-share:hover) .how-step-image-share,
+.how-steps:has(.how-step-comment:hover) .how-step-image-comment {
+  opacity: 1;
+}
+
+.how-steps:has(.how-step-upload:hover) .how-step-image-share,
+.how-steps:has(.how-step-upload:hover) .how-step-image-comment,
+.how-steps:has(.how-step-share:hover) .how-step-image-upload,
+.how-steps:has(.how-step-share:hover) .how-step-image-comment,
+.how-steps:has(.how-step-comment:hover) .how-step-image-upload,
+.how-steps:has(.how-step-comment:hover) .how-step-image-share {
+  opacity: 0;
+}
+
+#how-step-upload:checked ~ .how-steps-layout .how-step-upload,
+#how-step-share:checked ~ .how-steps-layout .how-step-share,
+#how-step-comment:checked ~ .how-steps-layout .how-step-comment,
+.how-step:hover {
+  background: white;
+  box-shadow: 0 1px 2px rgb(24 24 27 / 0.06);
+}
+
+#how-step-upload:checked ~ .how-steps-layout .how-step-upload .how-step-title,
+#how-step-share:checked ~ .how-steps-layout .how-step-share .how-step-title,
+#how-step-comment:checked ~ .how-steps-layout .how-step-comment .how-step-title,
+.how-step:hover .how-step-title {
+  color: #4f46e5;
+}
+
+#how-step-upload:checked ~ .how-steps-layout .how-step-upload .how-step-number,
+#how-step-share:checked ~ .how-steps-layout .how-step-share .how-step-number,
+#how-step-comment:checked ~ .how-steps-layout .how-step-comment .how-step-number,
+.how-step:hover .how-step-number {
+  color: #4338ca;
+}

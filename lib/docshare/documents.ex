@@ -179,7 +179,7 @@ defmodule Docshare.Documents do
 
   @doc "Adds a new version (auto-incremented number) to a document."
   def add_version(%Document{} = doc, %User{} = user, attrs) do
-    next = (latest_version(doc) && latest_version(doc).version_number || 0) + 1
+    next = ((latest_version(doc) && latest_version(doc).version_number) || 0) + 1
     label = Map.get(attrs, "label")
     label = if label in [nil, ""], do: "v#{next}", else: label
 
@@ -238,26 +238,44 @@ defmodule Docshare.Documents do
   Links an existing user account if one matches the email.
   """
   def invite_collaborator(%Document{} = doc, %User{} = inviter, email, role \\ "commenter") do
-    user = Repo.get_by(User, email: String.downcase(String.trim(email || "")))
+    email = String.downcase(String.trim(email || ""))
 
-    result =
-      %Collaborator{document_id: doc.id}
-      |> Collaborator.changeset(%{
-        email: email,
-        role: role,
-        document_id: doc.id,
-        user_id: user && user.id
-      })
-      |> Repo.insert()
+    with {:ok, collaborator} <- get_or_insert_collaborator(doc, email, role),
+         {:ok, _email} <- Notifier.deliver_invitation(collaborator, doc, inviter) do
+      broadcast(doc.id, {:collaborators_changed, doc.id})
+      {:ok, collaborator}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, changeset}
 
-    case result do
-      {:ok, collaborator} ->
-        Notifier.deliver_invitation(collaborator, doc, inviter)
-        broadcast(doc.id, {:collaborators_changed, doc.id})
+      {:error, reason} ->
+        {:error, {:email_delivery_failed, reason}}
+    end
+  end
+
+  defp get_or_insert_collaborator(%Document{} = doc, email, role) do
+    case Repo.get_by(Collaborator, document_id: doc.id, email: email) do
+      %Collaborator{} = collaborator ->
         {:ok, collaborator}
 
-      error ->
-        error
+      nil ->
+        user = Repo.get_by(User, email: email)
+
+        %Collaborator{document_id: doc.id}
+        |> Collaborator.changeset(%{
+          email: email,
+          role: role,
+          document_id: doc.id,
+          user_id: user && user.id
+        })
+        |> Repo.insert()
+        |> case do
+          {:ok, collaborator} ->
+            {:ok, collaborator}
+
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:error, changeset}
+        end
     end
   end
 

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="DocShare logo mark">
+  <defs>
+    <linearGradient id="indigo" x1="96" y1="40" x2="430" y2="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#4f46e5" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" fill="transparent"/>
+  <g filter="url(#shadow)">
+    <path d="M126 54h200l78 78v232c0 41-33 74-74 74H126c-41 0-74-33-74-74V128c0-41 33-74 74-74Z" fill="white" stroke="#c7d2fe" stroke-width="18" stroke-linejoin="round"/>
+    <path d="M326 55v53c0 14 11 25 25 25h52" fill="#eef2ff" stroke="#c7d2fe" stroke-width="18" stroke-linejoin="round"/>
+    <rect x="112" y="156" width="202" height="24" rx="12" fill="#71717a" opacity="0.22"/>
+    <rect x="112" y="214" width="242" height="30" rx="15" fill="#eef2ff" stroke="url(#indigo)" stroke-width="8"/>
+    <rect x="130" y="225" width="138" height="8" rx="4" fill="#818cf8"/>
+    <rect x="112" y="282" width="170" height="20" rx="10" fill="#71717a" opacity="0.20"/>
+    <path d="M318 282h70c40 0 72 32 72 72s-32 72-72 72h-64l-58 39c-15 10-35-6-28-23l16-42c-17-13-28-34-28-58 0-33 27-60 60-60h32Z" fill="url(#indigo)"/>
+    <circle cx="326" cy="354" r="12" fill="white" opacity=".96"/>
+    <circle cx="382" cy="354" r="12" fill="white" opacity=".96"/>
+    <circle cx="420" cy="242" r="30" fill="#eef2ff" stroke="url(#indigo)" stroke-width="12"/>
+    <path d="M406 242l10 10 20-24" fill="none" stroke="url(#indigo)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

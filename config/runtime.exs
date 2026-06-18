@@ -23,7 +23,9 @@ end
 
 # Send sharing / invitation emails through Resend whenever an API key is set.
 # Falls back to the Local (dev) / Test adapters otherwise.
-if resend_api_key = System.get_env("RESEND_API_KEY") do
+resend_api_key = System.get_env("RESEND_API_KEY")
+
+if config_env() != :test && resend_api_key do
   config :docshare, Docshare.Mailer,
     adapter: Swoosh.Adapters.Resend,
     api_key: resend_api_key

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="#fafafa"/>
+  <rect x="88" y="74" width="1024" height="482" rx="32" fill="#ffffff" stroke="#e4e4e7" stroke-width="2"/>
+  <rect x="88" y="74" width="1024" height="74" rx="32" fill="#eef2ff"/>
+  <circle cx="136" cy="111" r="9" fill="#6366f1"/>
+  <circle cx="168" cy="111" r="9" fill="#a5b4fc"/>
+  <circle cx="200" cy="111" r="9" fill="#c7d2fe"/>
+  <rect x="254" y="96" width="428" height="30" rx="15" fill="#ffffff"/>
+  <rect x="790" y="96" width="188" height="30" rx="15" fill="#4f46e5"/>
+  <rect x="128" y="190" width="562" height="300" rx="20" fill="#ffffff" stroke="#e4e4e7" stroke-width="2"/>
+  <rect x="168" y="232" width="256" height="22" rx="11" fill="#18181b"/>
+  <rect x="168" y="282" width="430" height="14" rx="7" fill="#d4d4d8"/>
+  <rect x="168" y="318" width="374" height="14" rx="7" fill="#d4d4d8"/>
+  <rect x="168" y="354" width="454" height="14" rx="7" fill="#d4d4d8"/>
+  <rect x="168" y="406" width="392" height="54" rx="14" fill="#eef2ff" stroke="#6366f1" stroke-width="3" stroke-dasharray="12 10"/>
+  <rect x="206" y="426" width="278" height="12" rx="6" fill="#a5b4fc"/>
+  <rect x="730" y="190" width="342" height="300" rx="20" fill="#ffffff" stroke="#e4e4e7" stroke-width="2"/>
+  <circle cx="772" cy="240" r="20" fill="#6366f1"/>
+  <rect x="812" y="226" width="162" height="12" rx="6" fill="#d4d4d8"/>
+  <rect x="812" y="252" width="120" height="12" rx="6" fill="#e4e4e7"/>
+  <rect x="772" y="300" width="246" height="12" rx="6" fill="#d4d4d8"/>
+  <rect x="772" y="326" width="186" height="12" rx="6" fill="#e4e4e7"/>
+  <rect x="772" y="378" width="250" height="70" rx="16" fill="#eef2ff"/>
+  <rect x="804" y="404" width="146" height="12" rx="6" fill="#a5b4fc"/>
+  <circle cx="1032" cy="422" r="22" fill="#4f46e5"/>
+  <path d="M1022 422H1042M1034 414L1042 422L1034 430" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M690 430C722 430 706 430 730 430" stroke="#6366f1" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="690" cy="430" r="10" fill="#6366f1"/>
+  <text x="128" y="610" fill="#18181b" font-family="Inter, Arial, sans-serif" font-size="54" font-weight="800">DocShare</text>
+  <text x="408" y="610" fill="#52525b" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="500">Collaborative HTML review</text>
+</svg>

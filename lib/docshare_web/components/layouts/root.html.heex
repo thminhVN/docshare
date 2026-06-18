@@ -4,6 +4,64 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
+    <meta
+      name="description"
+      content="DocShare is a collaborative HTML document review app for sharing HTML by email, collecting anchored comments, comparing versions, and exporting feedback for AI-assisted edits."
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="application-name" content="DocShare" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="author" content="DocShare" />
+    <link rel="canonical" href="https://docshare.gatetroy.com/" />
+    <link rel="icon" type="image/svg+xml" href={~p"/images/brand/favicon.svg"} />
+    <link rel="icon" type="image/png" sizes="1024x1024" href={~p"/images/brand/favicon-1024.png"} />
+    <link rel="apple-touch-icon" href={~p"/images/brand/favicon-1024.png"} />
+    <meta property="og:site_name" content="DocShare" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://docshare.gatetroy.com/" />
+    <meta property="og:title" content="DocShare — Collaborative HTML Review" />
+    <meta
+      property="og:description"
+      content="Host an HTML document online, invite collaborators by email, comment on each section, compare versions, and export feedback for AI-assisted fixes."
+    />
+    <meta property="og:image" content="https://docshare.gatetroy.com/images/og-docshare.png" />
+    <meta
+      property="og:image:secure_url"
+      content="https://docshare.gatetroy.com/images/og-docshare.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DocShare collaborative HTML review interface" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="DocShare — Collaborative HTML Review" />
+    <meta
+      name="twitter:description"
+      content="Share HTML documents, collect anchored comments, compare versions, and export feedback for AI-assisted edits."
+    />
+    <meta name="twitter:image" content="https://docshare.gatetroy.com/images/og-docshare.png" />
+    <script type="application/ld+json">
+      <%= Phoenix.HTML.raw(
+        Jason.encode!(%{
+          "@context" => "https://schema.org",
+          "@type" => "SoftwareApplication",
+          "name" => "DocShare",
+          "applicationCategory" => "BusinessApplication",
+          "operatingSystem" => "Web",
+          "url" => "https://docshare.gatetroy.com/",
+          "description" =>
+            "A collaborative HTML document review app for sharing HTML by email, anchored comments, version comparison, and AI-assisted feedback export.",
+          "offers" => %{
+            "@type" => "Offer",
+            "price" => "0",
+            "priceCurrency" => "USD"
+          },
+          "creator" => %{
+            "@type" => "Organization",
+            "name" => "DocShare"
+          }
+        })
+      ) %>
+    </script>
     <.live_title default="DocShare" suffix=" · DocShare">
       {assigns[:page_title]}
     </.live_title>
@@ -14,8 +72,14 @@
   <body class="bg-white">
     <header class="border-b border-zinc-100 bg-white">
       <div class="mx-auto w-full max-w-[1700px] flex items-center justify-between px-4 sm:px-6 lg:px-8 2xl:px-12 py-3">
-        <.link href={~p"/"} class="text-base font-bold tracking-tight text-zinc-900">
-          DocShare
+        <.link href={~p"/"} class="inline-flex items-center">
+          <img
+            src={~p"/images/brand/logo-horizontal.svg"}
+            alt="DocShare"
+            class="h-8 w-auto"
+            width="1800"
+            height="440"
+          />
         </.link>
         <nav class="flex items-center gap-4 text-[0.8125rem] leading-6">
           <%= if @current_user do %>
@@ -23,7 +87,10 @@
               My documents
             </.link>
             <span class="text-zinc-500">{@current_user.email}</span>
-            <.link href={~p"/users/settings"} class="text-zinc-900 font-semibold hover:text-zinc-700">
+            <.link
+              href={~p"/users/settings"}
+              class="text-zinc-900 font-semibold hover:text-zinc-700"
+            >
               Settings
             </.link>
             <.link
@@ -34,10 +101,16 @@
               Log out
             </.link>
           <% else %>
-            <.link href={~p"/users/register"} class="text-zinc-900 font-semibold hover:text-zinc-700">
+            <.link
+              href={~p"/users/register"}
+              class="text-zinc-900 font-semibold hover:text-zinc-700"
+            >
               Register
             </.link>
-            <.link href={~p"/users/log_in"} class="text-zinc-900 font-semibold hover:text-zinc-700">
+            <.link
+              href={~p"/users/log_in"}
+              class="text-zinc-900 font-semibold hover:text-zinc-700"
+            >
               Log in
             </.link>
           <% end %>

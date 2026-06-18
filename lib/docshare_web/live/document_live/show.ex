@@ -32,7 +32,11 @@ defmodule DocshareWeb.DocumentLive.Show do
         |> assign(:comment_form, to_form(%{"body" => ""}, as: :comment))
         |> assign(:invite_form, to_form(%{"email" => ""}, as: :invite))
         |> assign(:version_form, to_form(%{"label" => "", "raw_html" => ""}, as: :version))
-        |> allow_upload(:version_file, accept: ~w(.html .htm), max_entries: 1, max_file_size: 5_000_000)
+        |> allow_upload(:version_file,
+          accept: ~w(.html .htm),
+          max_entries: 1,
+          max_file_size: 5_000_000
+        )
         |> load_versions()
         |> load_collaborators()
 
@@ -233,6 +237,14 @@ defmodule DocshareWeb.DocumentLive.Show do
          socket
          |> put_flash(:info, "Invitation sent to #{email}.")
          |> assign(:invite_form, to_form(%{"email" => ""}, as: :invite))}
+
+      {:error, {:email_delivery_failed, _reason}} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Could not send invitation email. Check the mail provider configuration and try again."
+         )}
 
       {:error, changeset} ->
         msg =
@@ -556,8 +568,7 @@ defmodule DocshareWeb.DocumentLive.Show do
             allowfullscreen
             srcdoc={@frame}
             class="w-full h-full"
-          >
-          </iframe>
+          ></iframe>
         </div>
 
         <%!-- Comments panel --%>
@@ -664,14 +675,22 @@ defmodule DocshareWeb.DocumentLive.Show do
       </div>
 
       <%!-- Add-version modal --%>
-      <div :if={@show_add_version} class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div
+        :if={@show_add_version}
+        class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      >
         <div class="bg-white rounded-xl p-6 w-full max-w-lg" phx-click-away="toggle_add_version">
           <div class="flex items-center justify-between mb-3">
             <h2 class="text-lg font-bold">Add a new version</h2>
             <button phx-click="toggle_add_version" class="text-zinc-400 hover:text-zinc-700">✕</button>
           </div>
 
-          <.form for={@version_form} id="version-form" phx-change="validate_version" phx-submit="add_version">
+          <.form
+            for={@version_form}
+            id="version-form"
+            phx-change="validate_version"
+            phx-submit="add_version"
+          >
             <input
               type="text"
               name="version[label]"
@@ -679,12 +698,23 @@ defmodule DocshareWeb.DocumentLive.Show do
               class="w-full rounded-md border-zinc-300 text-sm mb-3 focus:border-indigo-500 focus:ring-indigo-500"
             />
 
-            <div class="border-2 border-dashed rounded-lg p-3 mb-3" phx-drop-target={@uploads.version_file.ref}>
+            <div
+              class="border-2 border-dashed rounded-lg p-3 mb-3"
+              phx-drop-target={@uploads.version_file.ref}
+            >
               <.live_file_input upload={@uploads.version_file} class="text-sm" />
               <p class="text-xs text-zinc-500 mt-1">Upload an .html file (overrides pasted HTML).</p>
-              <div :for={entry <- @uploads.version_file.entries} class="mt-2 text-sm flex items-center gap-2">
+              <div
+                :for={entry <- @uploads.version_file.entries}
+                class="mt-2 text-sm flex items-center gap-2"
+              >
                 <span>{entry.client_name}</span>
-                <button type="button" phx-click="cancel-version-upload" phx-value-ref={entry.ref} class="text-red-600">remove</button>
+                <button
+                  type="button"
+                  phx-click="cancel-version-upload"
+                  phx-value-ref={entry.ref}
+                  class="text-red-600"
+                >remove</button>
               </div>
             </div>
 
@@ -718,13 +748,19 @@ defmodule DocshareWeb.DocumentLive.Show do
           </div>
 
           <form id="diff-form" phx-change="update_diff" class="flex items-center gap-2 text-sm mb-3">
-            <select name="a" class="rounded-md border-zinc-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+            <select
+              name="a"
+              class="rounded-md border-zinc-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+            >
               <option :for={v <- @versions} value={v.id} selected={@diff_a && v.id == @diff_a.id}>
                 {v.label}
               </option>
             </select>
             <span class="text-zinc-400">→</span>
-            <select name="b" class="rounded-md border-zinc-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+            <select
+              name="b"
+              class="rounded-md border-zinc-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+            >
               <option :for={v <- @versions} value={v.id} selected={@diff_b && v.id == @diff_b.id}>
                 {v.label}
               </option>
@@ -737,7 +773,11 @@ defmodule DocshareWeb.DocumentLive.Show do
 
           <div class="flex-1 min-h-0 flex gap-3">
             <%!-- Step sidebar: jump to each change --%>
-            <nav id="diff-nav" phx-hook="DiffNav" class="w-56 shrink-0 overflow-y-auto rounded-md border bg-zinc-50 p-2 text-xs">
+            <nav
+              id="diff-nav"
+              phx-hook="DiffNav"
+              class="w-56 shrink-0 overflow-y-auto rounded-md border bg-zinc-50 p-2 text-xs"
+            >
               <p class="font-semibold text-zinc-500 uppercase tracking-wide px-1 mb-1">
                 Changes ({length(@diff_steps)})
               </p>
@@ -762,14 +802,16 @@ defmodule DocshareWeb.DocumentLive.Show do
               sandbox="allow-scripts"
               srcdoc={@diff_frame}
               class="flex-1 w-full rounded-md border bg-white"
-            >
-            </iframe>
+            ></iframe>
           </div>
         </div>
       </div>
 
       <%!-- Export modal --%>
-      <div :if={@show_export} class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div
+        :if={@show_export}
+        class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      >
         <div class="bg-white rounded-xl p-6 w-full max-w-2xl" phx-click-away="toggle_export">
           <div class="flex items-center justify-between mb-1">
             <h2 class="text-lg font-bold">Export comments — {@version.label}</h2>
@@ -802,7 +844,10 @@ defmodule DocshareWeb.DocumentLive.Show do
       </div>
 
       <%!-- Share modal --%>
-      <div :if={@show_share} class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div
+        :if={@show_share}
+        class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      >
         <div class="bg-white rounded-xl p-6 w-full max-w-md" phx-click-away="toggle_share">
           <div class="flex items-center justify-between mb-3">
             <h2 class="text-lg font-bold">Share “{@doc.title}”</h2>
@@ -833,7 +878,11 @@ defmodule DocshareWeb.DocumentLive.Show do
             </li>
             <li :for={c <- @collaborators} class="flex items-center justify-between text-sm">
               <span>{c.email}</span>
-              <button phx-click="remove_collaborator" phx-value-id={c.id} class="text-xs text-red-600 hover:underline">
+              <button
+                phx-click="remove_collaborator"
+                phx-value-id={c.id}
+                class="text-xs text-red-600 hover:underline"
+              >
                 remove
               </button>
             </li>
@@ -859,11 +908,18 @@ defmodule DocshareWeb.DocumentLive.Show do
     <div class={["rounded-md border p-2 bg-zinc-50", @comment.resolved && "opacity-60"]}>
       <div class="flex items-center justify-between">
         <span class="text-xs font-semibold text-zinc-700">{@comment.author.email}</span>
-        <span class="text-[10px] text-zinc-400">{Calendar.strftime(@comment.inserted_at, "%b %d %H:%M")}</span>
+        <span class="text-[10px] text-zinc-400">{Calendar.strftime(
+          @comment.inserted_at,
+          "%b %d %H:%M"
+        )}</span>
       </div>
       <p class="text-sm text-zinc-800 whitespace-pre-wrap mt-1">{format_comment(@comment.body)}</p>
       <div class="flex gap-3 mt-1">
-        <button phx-click="toggle_resolved" phx-value-id={@comment.id} class="text-[11px] text-zinc-500 hover:underline">
+        <button
+          phx-click="toggle_resolved"
+          phx-value-id={@comment.id}
+          class="text-[11px] text-zinc-500 hover:underline"
+        >
           {if @comment.resolved, do: "Reopen", else: "Resolve"}
         </button>
         <button

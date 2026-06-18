@@ -3,6 +3,7 @@ defmodule DocshareWeb.DocumentLiveTest do
 
   import Phoenix.LiveViewTest
   import Docshare.AccountsFixtures
+  import Swoosh.TestAssertions
 
   alias Docshare.Documents
 
@@ -64,14 +65,23 @@ defmodule DocshareWeb.DocumentLiveTest do
     assert [%{body: "Nice heading", anchor: "b0"}] = Documents.list_comments(version)
   end
 
-  test "versions are independent: switching shows that version's comments", %{conn: conn, user: user} do
+  test "versions are independent: switching shows that version's comments", %{
+    conn: conn,
+    user: user
+  } do
     doc = create_doc(user)
     v1 = Documents.latest_version(doc)
-    {:ok, v2} = Documents.add_version(doc, user, %{"label" => "v2", "raw_html" => "<p>Second draft</p>"})
+
+    {:ok, v2} =
+      Documents.add_version(doc, user, %{"label" => "v2", "raw_html" => "<p>Second draft</p>"})
 
     # Comment on v1.
     {:ok, _} =
-      Documents.create_comment(v1, user, %{"body" => "on v1", "anchor" => "b0", "anchor_label" => "Hello"})
+      Documents.create_comment(v1, user, %{
+        "body" => "on v1",
+        "anchor" => "b0",
+        "anchor_label" => "Hello"
+      })
 
     {:ok, view, _html} = live(conn, ~p"/docs/#{doc.token}")
     # Latest version (v2) is shown by default and has no comments yet.
@@ -103,6 +113,26 @@ defmodule DocshareWeb.DocumentLiveTest do
 
     assert html =~ "Invitation sent to friend@example.com"
     assert [%{email: "friend@example.com"}] = Documents.list_collaborators(doc)
+
+    assert_email_sent(to: "friend@example.com")
+  end
+
+  test "owner can resend an invitation to an existing collaborator", %{conn: conn, user: user} do
+    doc = create_doc(user)
+    assert {:ok, _collaborator} = Documents.invite_collaborator(doc, user, "friend@example.com")
+
+    {:ok, view, _html} = live(conn, ~p"/docs/#{doc.token}")
+    view |> element("button", "Share") |> render_click()
+
+    html =
+      view
+      |> form("#invite-form", invite: %{email: "friend@example.com"})
+      |> render_submit()
+
+    assert html =~ "Invitation sent to friend@example.com"
+    assert [%{email: "friend@example.com"}] = Documents.list_collaborators(doc)
+
+    assert_email_sent(to: "friend@example.com")
   end
 
   test "mermaid diagrams get the renderer injected into the frame", %{conn: conn, user: user} do
@@ -162,7 +192,12 @@ defmodule DocshareWeb.DocumentLiveTest do
 
   test "can show a rendered diff between two versions", %{conn: conn, user: user} do
     doc = create_doc(user)
-    {:ok, _v2} = Documents.add_version(doc, user, %{"label" => "v2", "raw_html" => "<h1>Hello</h1><p>Changed world</p>"})
+
+    {:ok, _v2} =
+      Documents.add_version(doc, user, %{
+        "label" => "v2",
+        "raw_html" => "<h1>Hello</h1><p>Changed world</p>"
+      })
 
     # Block-level diff: shared heading equal, paragraph changed (del + ins),
     # carrying rendered HTML rather than source.
@@ -170,7 +205,11 @@ defmodule DocshareWeb.DocumentLiveTest do
     diff = Documents.diff_version_blocks(v1, v2)
     assert {:eq, %{html: "<h1>Hello</h1>"}} = Enum.find(diff, &(elem(&1, 0) == :eq))
     assert Enum.any?(diff, &(&1 == {:del, %{text: "World", html: "<p>World</p>"}}))
-    assert Enum.any?(diff, &(&1 == {:ins, %{text: "Changed world", html: "<p>Changed world</p>"}}))
+
+    assert Enum.any?(
+             diff,
+             &(&1 == {:ins, %{text: "Changed world", html: "<p>Changed world</p>"}})
+           )
 
     # UI: Compare button opens a modal that renders the redline in an iframe.
     {:ok, view, _html} = live(conn, ~p"/docs/#{doc.token}")

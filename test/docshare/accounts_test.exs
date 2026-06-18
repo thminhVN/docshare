@@ -59,11 +59,11 @@ defmodule Docshare.AccountsTest do
     end
 
     test "validates email and password when given" do
-      {:error, changeset} = Accounts.register_user(%{email: "not valid", password: "not valid"})
+      {:error, changeset} = Accounts.register_user(%{email: "not valid", password: "short"})
 
       assert %{
                email: ["must have the @ sign and no spaces"],
-               password: ["should be at least 12 character(s)"]
+               password: ["should be at least 6 character(s)"]
              } = errors_on(changeset)
     end
 
@@ -262,12 +262,12 @@ defmodule Docshare.AccountsTest do
     test "validates password", %{user: user} do
       {:error, changeset} =
         Accounts.update_user_password(user, valid_user_password(), %{
-          password: "not valid",
+          password: "short",
           password_confirmation: "another"
         })
 
       assert %{
-               password: ["should be at least 12 character(s)"],
+               password: ["should be at least 6 character(s)"],
                password_confirmation: ["does not match password"]
              } = errors_on(changeset)
     end
@@ -456,8 +456,9 @@ defmodule Docshare.AccountsTest do
       assert Repo.get_by(UserToken, user_id: user.id)
     end
 
-    test "does not return the user if token expired", %{user: user, token: token} do
-      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+    test "does not return the user if token is older than 24 hours", %{user: user, token: token} do
+      expired_at = DateTime.utc_now(:second) |> DateTime.add(-25, :hour)
+      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: expired_at])
       refute Accounts.get_user_by_reset_password_token(token)
       assert Repo.get_by(UserToken, user_id: user.id)
     end
@@ -471,14 +472,22 @@ defmodule Docshare.AccountsTest do
     test "validates password", %{user: user} do
       {:error, changeset} =
         Accounts.reset_user_password(user, %{
-          password: "not valid",
+          password: "short",
           password_confirmation: "another"
         })
 
       assert %{
-               password: ["should be at least 12 character(s)"],
+               password: ["should be at least 6 character(s)"],
                password_confirmation: ["does not match password"]
              } = errors_on(changeset)
+    end
+
+    test "accepts a 6-character password", %{user: user} do
+      {:ok, updated_user} =
+        Accounts.reset_user_password(user, %{password: "secret", password_confirmation: "secret"})
+
+      assert is_nil(updated_user.password)
+      assert Accounts.get_user_by_email_and_password(user.email, "secret")
     end
 
     test "validates maximum values for password for security", %{user: user} do
