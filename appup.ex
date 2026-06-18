@@ -22,10 +22,30 @@
 #    [{~c"0.1.0", [{:load_module, DocshareWeb.DocumentLive.Show}]}],
 #    [{~c"0.1.0", [{:load_module, DocshareWeb.DocumentLive.Show}]}]}
 
-{~c"0.1.1",
- [{~c"0.1.0", [
-   {:load_module, DocshareWeb.UserRegistrationLive}
- ]}],
- [{~c"0.1.0", [
-   {:load_module, DocshareWeb.UserRegistrationLive}
- ]}]}
+{~c"0.1.2",
+ [
+   {~c"0.1.1",
+    [
+      {:load_module, Docshare.Accounts.User},
+      {:load_module, Docshare.Accounts.UserNotifier},
+      {:load_module, Docshare.Accounts.UserToken},
+      {:load_module, Docshare.Documents},
+      {:load_module, DocshareWeb},
+      {:load_module, DocshareWeb.DocumentLive.Show},
+      {:load_module, DocshareWeb.Layouts},
+      {:load_module, DocshareWeb.PageHTML}
+    ]}
+ ],
+ [
+   {~c"0.1.1",
+    [
+      {:load_module, Docshare.Accounts.User},
+      {:load_module, Docshare.Accounts.UserNotifier},
+      {:load_module, Docshare.Accounts.UserToken},
+      {:load_module, Docshare.Documents},
+      {:load_module, DocshareWeb},
+      {:load_module, DocshareWeb.DocumentLive.Show},
+      {:load_module, DocshareWeb.Layouts},
+      {:load_module, DocshareWeb.PageHTML}
+    ]}
+ ]}
