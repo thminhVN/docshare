@@ -64,7 +64,7 @@ defmodule DocshareWeb.DocumentLive.Show do
 
     socket
     |> assign(:version, version)
-    |> assign(:frame, build_frame(processed, head_html))
+    |> assign(:frame, Html.frame(processed, head_html))
     |> assign(:selected_anchor, nil)
     |> assign(:selected_label, nil)
     |> load_comments()
@@ -247,6 +247,24 @@ defmodule DocshareWeb.DocumentLive.Show do
 
   def handle_event("toggle_share", _params, socket) do
     {:noreply, assign(socket, :show_share, !socket.assigns.show_share)}
+  end
+
+  def handle_event("toggle_public_share", _params, socket) do
+    if socket.assigns.owner? do
+      doc = socket.assigns.doc
+
+      result =
+        if Documents.public?(doc),
+          do: Documents.disable_public_sharing(doc),
+          else: Documents.enable_public_sharing(doc)
+
+      case result do
+        {:ok, doc} -> {:noreply, assign(socket, :doc, doc)}
+        {:error, _} -> {:noreply, put_flash(socket, :error, "Could not update public sharing.")}
+      end
+    else
+      {:noreply, put_flash(socket, :error, "Only the owner can change public sharing.")}
+    end
   end
 
   def handle_event("invite", %{"invite" => %{"email" => email}}, socket) do
@@ -442,83 +460,6 @@ defmodule DocshareWeb.DocumentLive.Show do
     """
   end
 
-  # Build the sandboxed iframe document: the document's own styles + user
-  # content + our own CSS/JS. No user scripts are included.
-  defp build_frame(processed_html, head_html) do
-    """
-    <!doctype html>
-    <html>
-    <head>
-    <meta charset="utf-8">
-    #{head_html}
-    #{mermaid_head(processed_html)}
-    <style>
-      html { font-family: ui-sans-serif, system-ui, sans-serif; padding: 8px 16px; color:#18181b; }
-      [data-anchor] { position: relative; transition: background .1s, outline .1s; border-radius: 3px; }
-      [data-anchor]:hover { outline: 2px solid rgba(99,102,241,.35); cursor: pointer; }
-      [data-anchor].ds-selected { outline: 2px solid #6366f1; background: rgba(99,102,241,.08); }
-      [data-anchor][data-ds-count]:not([data-ds-count="0"])::after {
-        content: attr(data-ds-count);
-        position: absolute; top: -8px; right: -8px;
-        min-width: 16px; height: 16px; padding: 0 4px;
-        background: #6366f1; color: #fff; font-size: 10px; line-height: 16px;
-        text-align: center; border-radius: 8px; font-family: sans-serif;
-      }
-    </style>
-    </head>
-    <body>
-    #{processed_html}
-    <script>
-    (function () {
-      document.body.addEventListener('click', function (e) {
-        var el = e.target.closest('[data-anchor]');
-        if (!el) return;
-        e.preventDefault();
-        parent.postMessage({
-          type: 'ds:select',
-          anchor: el.getAttribute('data-anchor'),
-          label: (el.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 120)
-        }, '*');
-      });
-      window.addEventListener('message', function (e) {
-        var d = e.data || {};
-        if (d.type === 'ds:counts') {
-          var counts = d.counts || {};
-          document.querySelectorAll('[data-anchor]').forEach(function (el) {
-            el.setAttribute('data-ds-count', counts[el.getAttribute('data-anchor')] || 0);
-          });
-        } else if (d.type === 'ds:select') {
-          document.querySelectorAll('[data-anchor].ds-selected').forEach(function (el) {
-            el.classList.remove('ds-selected');
-          });
-          if (d.anchor) {
-            var sel = document.querySelector('[data-anchor="' + d.anchor + '"]');
-            if (sel) { sel.classList.add('ds-selected'); sel.scrollIntoView({block:'center', behavior:'smooth'}); }
-          }
-        }
-      });
-      parent.postMessage({ type: 'ds:ready' }, '*');
-    })();
-    </script>
-    </body>
-    </html>
-    """
-  end
-
-  # When the document uses Mermaid (e.g. <pre class="mermaid">graph TD; A--&gt;B;</pre>),
-  # load Mermaid from a CDN inside the sandboxed frame and auto-render diagrams.
-  defp mermaid_head(html) do
-    if String.contains?(html, "mermaid") do
-      """
-      <script type="module">
-        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-        mermaid.initialize({ startOnLoad: true });
-      </script>
-      """
-    else
-      ""
-    end
-  end
 
   @impl true
   def render(assigns) do
@@ -632,9 +573,10 @@ defmodule DocshareWeb.DocumentLive.Show do
           <button
             phx-click="toggle_fullscreen"
             title={if @fullscreen, do: "Exit fullscreen (Esc)", else: "Fullscreen"}
-            class="absolute top-2 right-2 z-10 rounded-md bg-zinc-900/70 text-white px-2.5 py-1.5 text-xs font-semibold hover:bg-zinc-900"
+            aria-label={if @fullscreen, do: "Exit fullscreen", else: "Fullscreen"}
+            class="absolute top-2 right-2 z-10 rounded-md bg-zinc-900/70 text-white px-2.5 py-1.5 text-sm font-semibold hover:bg-zinc-900"
           >
-            {if @fullscreen, do: "✕ Exit fullscreen", else: "⛶ Fullscreen"}
+            {if @fullscreen, do: "✕", else: "⛶"}
           </button>
           <iframe
             id={"doc-frame-#{@version.id}"}
@@ -963,6 +905,48 @@ defmodule DocshareWeb.DocumentLive.Show do
               </button>
             </li>
           </ul>
+
+          <div :if={@owner?} class="mt-5 pt-4 border-t">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-semibold">Public link</h3>
+                <p class="text-xs text-zinc-500">
+                  Anyone with the link can view (read-only). No sign-in required.
+                </p>
+              </div>
+              <button
+                phx-click="toggle_public_share"
+                class={[
+                  "shrink-0 rounded-md px-3 py-1.5 text-sm font-semibold",
+                  if(Documents.public?(@doc),
+                    do: "bg-zinc-100 text-zinc-700 hover:bg-zinc-200",
+                    else: "bg-indigo-600 text-white hover:bg-indigo-500"
+                  )
+                ]}
+              >
+                {if Documents.public?(@doc), do: "Disable", else: "Enable"}
+              </button>
+            </div>
+
+            <div :if={Documents.public?(@doc)} class="mt-3 flex gap-2">
+              <input
+                id="public-link"
+                type="text"
+                readonly
+                value={url(~p"/p/#{@doc.public_token}")}
+                class="flex-1 rounded-md border-zinc-300 bg-zinc-50 text-xs text-zinc-700 focus:border-indigo-500 focus:ring-indigo-500"
+              />
+              <button
+                id="copy-public-link"
+                phx-hook="CopyButton"
+                data-target="#public-link"
+                type="button"
+                class="shrink-0 rounded-md bg-zinc-900 text-white px-3 text-sm font-semibold hover:bg-zinc-700"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

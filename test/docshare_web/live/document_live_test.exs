@@ -415,16 +415,66 @@ defmodule DocshareWeb.DocumentLiveTest do
     assert redirected_to(conn) == ~p"/docs"
   end
 
+  test "owner can enable a public link and anyone can view it read-only", %{
+    conn: conn,
+    user: user
+  } do
+    doc = create_doc(user)
+    {:ok, view, _html} = live(conn, ~p"/docs/#{doc.token}")
+
+    view |> element("button", "Share") |> render_click()
+    html = view |> element("button[phx-click=toggle_public_share]") |> render_click()
+    assert html =~ "/p/"
+
+    doc = Documents.get_document!(doc.id)
+    assert Documents.public?(doc)
+
+    # A brand-new (logged-out) visitor can open the public view.
+    {:ok, _pub, html} = live(build_conn(), ~p"/p/#{doc.public_token}")
+    assert html =~ "Read-only shared document"
+    assert html =~ "Test Doc"
+    # No commenting / sharing affordances are present.
+    refute html =~ "toggle_share"
+    refute html =~ "add_comment"
+  end
+
+  test "public link is unavailable until sharing is enabled", %{conn: _conn} do
+    assert {:error, {:redirect, %{to: "/"}}} = live(build_conn(), ~p"/p/nope-not-real")
+  end
+
+  test "disabling the public link revokes access", %{user: user} do
+    doc = create_doc(user)
+    {:ok, doc} = Documents.enable_public_sharing(doc)
+    token = doc.public_token
+
+    {:ok, _pub, _html} = live(build_conn(), ~p"/p/#{token}")
+
+    {:ok, _doc} = Documents.disable_public_sharing(doc)
+    assert {:error, {:redirect, %{to: "/"}}} = live(build_conn(), ~p"/p/#{token}")
+  end
+
+  test "public print endpoint works without authentication", %{conn: _conn, user: user} do
+    doc = create_doc(user)
+    {:ok, doc} = Documents.enable_public_sharing(doc)
+    version = Documents.latest_version(doc)
+
+    conn = get(build_conn(), ~p"/p/#{doc.public_token}/versions/#{version.id}/print")
+    body = html_response(conn, 200)
+
+    assert body =~ "Hello"
+    assert body =~ "window.print()"
+  end
+
   test "document detail can toggle fullscreen", %{conn: conn, user: user} do
     doc = create_doc(user)
     {:ok, view, html} = live(conn, ~p"/docs/#{doc.token}")
     assert html =~ "Fullscreen"
 
-    html = view |> element("button", "Fullscreen") |> render_click()
+    html = view |> element("button[phx-click=toggle_fullscreen]") |> render_click()
     assert html =~ "Exit fullscreen"
     assert html =~ "fixed inset-0 z-50"
 
-    html = view |> element("button", "Exit fullscreen") |> render_click()
+    html = view |> element("button[phx-click=toggle_fullscreen]") |> render_click()
     refute html =~ "Exit fullscreen"
   end
 

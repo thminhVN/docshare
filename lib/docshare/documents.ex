@@ -103,6 +103,22 @@ defmodule Docshare.Documents do
   end
 
   @doc """
+  Returns a `%{document_id => latest %Version{}}` map for the given documents,
+  in a single query. Used to render grid previews on the index.
+  """
+  def latest_versions_for(documents) when is_list(documents) do
+    ids = Enum.map(documents, & &1.id)
+
+    from(v in Version,
+      where: v.document_id in ^ids,
+      distinct: v.document_id,
+      order_by: [asc: v.document_id, desc: v.version_number]
+    )
+    |> Repo.all()
+    |> Map.new(&{&1.document_id, &1})
+  end
+
+  @doc """
   Builds a plain-text export pairing each commented section's content with its
   comments, formatted to paste into an LLM prompt to revise the document.
   """
@@ -215,6 +231,40 @@ defmodule Docshare.Documents do
 
   def can_access?(%Document{} = doc, %User{} = user) do
     owner?(doc, user) or collaborator?(doc, user)
+  end
+
+  ## Public read-only sharing
+
+  @doc "Whether the document has a public read-only share link enabled."
+  def public?(%Document{public_token: token}), do: is_binary(token) and token != ""
+
+  @doc "Fetches a publicly-shared document by its public token, or nil."
+  def get_public_document(token) when is_binary(token) do
+    Repo.get_by(Document, public_token: token)
+  end
+
+  def get_public_document(_), do: nil
+
+  @doc "Enables public sharing, generating a token if one doesn't exist yet."
+  def enable_public_sharing(%Document{} = doc) do
+    if public?(doc) do
+      {:ok, doc}
+    else
+      doc
+      |> Ecto.Changeset.change(public_token: gen_public_token())
+      |> Repo.update()
+    end
+  end
+
+  @doc "Disables public sharing by clearing the public token."
+  def disable_public_sharing(%Document{} = doc) do
+    doc
+    |> Ecto.Changeset.change(public_token: nil)
+    |> Repo.update()
+  end
+
+  defp gen_public_token do
+    :crypto.strong_rand_bytes(16) |> Base.url_encode64(padding: false)
   end
 
   defp collaborator?(%Document{} = doc, %User{} = user) do

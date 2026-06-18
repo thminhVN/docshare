@@ -5,6 +5,7 @@ defmodule Docshare.Documents.Document do
   schema "documents" do
     field :title, :string
     field :token, :string
+    field :public_token, :string
 
     belongs_to :owner, Docshare.Accounts.User
     has_many :versions, Docshare.Documents.Version

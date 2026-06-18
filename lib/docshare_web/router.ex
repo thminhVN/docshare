@@ -82,10 +82,15 @@ defmodule DocshareWeb.Router do
 
     delete "/users/log_out", UserSessionController, :delete
 
+    # Public, read-only share links (no authentication required).
+    get "/p/:public_token/versions/:version_id/print", DocumentController, :public_print
+
     live_session :current_user,
       on_mount: [{DocshareWeb.UserAuth, :mount_current_user}] do
       live "/users/confirm/:token", UserConfirmationLive, :edit
       live "/users/confirm", UserConfirmationInstructionsLive, :new
+
+      live "/p/:public_token", DocumentLive.Public, :show
     end
   end
 end

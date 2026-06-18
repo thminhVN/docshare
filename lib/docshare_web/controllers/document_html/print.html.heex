@@ -12,6 +12,40 @@
     @media print {
       @page { margin: 0.75in; }
       body { padding: 0; }
+
+      /* Avoid stranded single lines at the top/bottom of a page. */
+      p, li, blockquote { orphans: 3; widows: 3; }
+
+      /* Keep a heading on the same page as the content it introduces. */
+      h1, h2, h3, h4, h5, h6 {
+        break-after: avoid-page;
+        page-break-after: avoid; /* legacy */
+        break-inside: avoid;
+      }
+
+      /* Never slice an atomic block across a page boundary. */
+      pre, table, figure, blockquote, img, svg,
+      .mermaid, pre.mermaid {
+        break-inside: avoid;
+        page-break-inside: avoid; /* legacy */
+      }
+
+      /* Keep individual rows / list items whole. */
+      tr, li { break-inside: avoid; page-break-inside: avoid; }
+
+      /* If a long table must span pages, repeat its header row. */
+      thead { display: table-header-group; }
+
+      /* Shrink an oversized diagram/image so it fits on one page rather than
+         being cut in half. 9in ≈ Letter height minus the 0.75in margins. */
+      img, svg { max-width: 100%; height: auto; }
+      .mermaid { text-align: center; break-inside: avoid; page-break-inside: avoid; }
+      .mermaid svg {
+        max-width: 100% !important;
+        max-height: 9in !important;
+        height: auto !important;
+        width: auto !important;
+      }
     }
   </style>
 </head>
