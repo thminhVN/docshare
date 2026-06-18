@@ -98,9 +98,6 @@ if [[ "$DEPLOY_MODE" == "full" ]]; then
 
   tar xzf "$TAR" -C "$APP_DIR"
 
-  step "Running database migrations"
-  "$APP_DIR/bin/${APP_NAME}" eval "Docshare.Release.migrate()"
-
   $RESTART restart "$SERVICE"
   sleep 2
   $RESTART --no-pager --full status "$SERVICE" | head -n 10 || true
@@ -124,7 +121,7 @@ else
   "$APP_DIR/bin/${APP_NAME}" unpack "$VSN"
 
   echo "-> running database migrations"
-  "$APP_DIR/bin/${APP_NAME}" eval "Docshare.Release.migrate()"
+  MIX_ENV=prod mix ecto.migrate
 
   echo "-> installing into the running node"
   "$APP_DIR/bin/${APP_NAME}" install "$VSN"

@@ -8,13 +8,25 @@ config :bcrypt_elixir, :log_rounds, 1
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
+test_db = "docshare_test#{System.get_env("MIX_TEST_PARTITION")}"
+
+db_opts =
+  case System.get_env("DATABASE_URL") do
+    nil ->
+      [username: System.get_env("USER") || "postgres", password: "", hostname: "localhost", database: test_db]
+
+    url ->
+      uri = URI.parse(url)
+      [user, pass] = String.split(uri.userinfo || "postgres:", ":", parts: 2)
+      [username: user, password: pass, hostname: uri.host, database: test_db]
+  end
+
 config :docshare, Docshare.Repo,
-  username: System.get_env("USER") || "postgres",
-  password: System.get_env("PGPASSWORD") || "",
-  hostname: "localhost",
-  database: "docshare_test#{System.get_env("MIX_TEST_PARTITION")}",
-  pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: System.schedulers_online() * 2
+  db_opts ++
+    [
+      pool: Ecto.Adapters.SQL.Sandbox,
+      pool_size: System.schedulers_online() * 2
+    ]
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

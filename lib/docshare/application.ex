@@ -7,6 +7,11 @@ defmodule Docshare.Application do
 
   @impl true
   def start(_type, _args) do
+    if System.get_env("RELEASE_ROOT") do
+      Docshare.Release.migrate()
+      Docshare.Release.seed()
+    end
+
     children = [
       DocshareWeb.Telemetry,
       Docshare.Repo,
