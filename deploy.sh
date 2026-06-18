@@ -11,7 +11,7 @@
 # Layout on the server:
 #   current repo  <- source checkout where `mix release` runs (keeps _build)
 #   $BASE/app     <- extracted release root; systemd runs $BASE/app/bin/docshare
-#   $BASE/.env    <- runtime env (EnvironmentFile); also read by runtime.exs
+#   .env          <- optional runtime env loaded by config/runtime.exs
 #
 # Hot upgrades require an appup describing the change: bump `version:` in mix.exs
 # AND update appup.ex for the new version BEFORE deploying. See deploy/HOT_UPGRADE.md.
@@ -33,7 +33,6 @@ APP_NAME="docshare"
 
 BUILD_DIR="$PWD"
 APP_DIR="$BASE/app"
-ENV_FILE="$BASE/.env"
 
 FORCE_FULL=0
 [[ "${1:-}" == "--full" ]] && FORCE_FULL=1
@@ -52,10 +51,6 @@ mkdir -p "$APP_DIR"
 for bin in mix elixir; do
   command -v "$bin" >/dev/null || { red "Missing $bin on server (install Erlang/Elixir)."; exit 1; }
 done
-[[ -f "$ENV_FILE" ]] || {
-  red "Missing $ENV_FILE. Copy deploy/env.prod.example there and fill it in."
-  exit 1
-}
 
 step "Building release v$VSN locally"
 export MIX_ENV=prod
@@ -126,7 +121,7 @@ Logs: journalctl -u $SERVICE -f
 #      sudo mkdir -p /opt/docshare/{build,app} && sudo chown -R docshare:docshare /opt/docshare
 #   3. sudo -u postgres createuser docshare --pwprompt
 #      sudo -u postgres createdb docshare_prod -O docshare
-#   4. cp deploy/env.prod.example /opt/docshare/.env   (edit; chmod 600;
+#   4. cp deploy/env.prod.example .env   (edit; chmod 600;
 #      generate SECRET_KEY_BASE with `mix phx.gen.secret`)
 #   5. sudo cp deploy/docshare.service /etc/systemd/system/docshare.service
 #      sudo systemctl daemon-reload && sudo systemctl enable docshare

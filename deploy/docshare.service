@@ -11,7 +11,7 @@ Type=simple
 User=docshare
 Group=docshare
 WorkingDirectory=/opt/docshare
-EnvironmentFile=/opt/docshare/.env
+EnvironmentFile=-/opt/docshare/.env
 # The extracted release root (releases/ accumulate here for hot upgrades).
 ExecStart=/opt/docshare/app/bin/docshare start
 ExecStop=/opt/docshare/app/bin/docshare stop
