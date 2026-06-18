@@ -157,6 +157,39 @@ defmodule DocshareWeb.DocumentLiveTest do
     assert_email_sent(to: "friend@example.com")
   end
 
+  test "removing a collaborator revokes access but keeps their comments", %{
+    conn: conn,
+    user: user
+  } do
+    collaborator = user_fixture(%{email: "friend@example.com"})
+    doc = create_doc(user)
+    version = Documents.latest_version(doc)
+
+    assert {:ok, _collaborator} = Documents.invite_collaborator(doc, user, collaborator.email)
+
+    assert {:ok, _comment} =
+             Documents.create_comment(version, collaborator, %{
+               "body" => "Please clarify this section",
+               "anchor" => "b0",
+               "anchor_label" => "Hello"
+             })
+
+    [collaborator_access] = Documents.list_collaborators(doc)
+    assert :ok = Documents.remove_collaborator(collaborator_access)
+
+    refute Documents.can_access?(doc, collaborator)
+
+    assert [%{body: "Please clarify this section", author: %{email: "friend@example.com"}}] =
+             Documents.list_comments(version)
+
+    {:ok, _owner_view, html} = live(conn, ~p"/docs/#{doc.token}")
+    assert html =~ "Please clarify this section"
+    assert html =~ "friend@example.com"
+
+    collaborator_conn = log_in_user(build_conn(), collaborator)
+    assert {:error, {:redirect, %{to: "/docs"}}} = live(collaborator_conn, ~p"/docs/#{doc.token}")
+  end
+
   test "mermaid diagrams get the renderer injected into the frame", %{conn: conn, user: user} do
     {:ok, doc} =
       Documents.create_document(user, %{

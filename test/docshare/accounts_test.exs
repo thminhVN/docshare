@@ -379,6 +379,21 @@ defmodule Docshare.AccountsTest do
       assert user_token.sent_to == user.email
       assert user_token.context == "confirm"
     end
+
+    test "sends branded HTML confirmation email", %{user: user} do
+      {:ok, email} =
+        Accounts.deliver_user_confirmation_instructions(user, fn token ->
+          "https://docshare.gatetroy.com/users/confirm/#{token}"
+        end)
+
+      assert email.text_body =~ "You can confirm your account"
+      assert email.html_body =~ "DocShare"
+      assert email.html_body =~ "Confirm your account"
+      assert email.html_body =~ "Confirm account"
+      assert email.html_body =~ "https://docshare.gatetroy.com/users/confirm/"
+      assert email.html_body =~ "Made by"
+      assert email.html_body =~ "gatetroy.com"
+    end
   end
 
   describe "confirm_user/1" do
