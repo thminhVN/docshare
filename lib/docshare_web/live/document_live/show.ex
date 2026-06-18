@@ -32,6 +32,7 @@ defmodule DocshareWeb.DocumentLive.Show do
         |> assign(:comment_form, to_form(%{"body" => ""}, as: :comment))
         |> assign(:invite_form, to_form(%{"email" => ""}, as: :invite))
         |> assign(:version_form, to_form(%{"label" => "", "raw_html" => ""}, as: :version))
+        |> assign(:port_suggestion, nil)
         |> allow_upload(:version_file,
           accept: ~w(.html .htm),
           max_entries: 1,
@@ -90,7 +91,8 @@ defmodule DocshareWeb.DocumentLive.Show do
   @impl true
   def handle_event("select_version", %{"id" => id}, socket) do
     version = Enum.find(socket.assigns.versions, &(to_string(&1.id) == id))
-    {:noreply, if(version, do: select_version(socket, version), else: socket)}
+    socket = if(version, do: select_version(socket, version), else: socket)
+    {:noreply, assign(socket, :port_suggestion, nil)}
   end
 
   def handle_event("toggle_fullscreen", _params, socket) do
@@ -146,11 +148,28 @@ defmodule DocshareWeb.DocumentLive.Show do
 
     case Documents.add_version(socket.assigns.doc, socket.assigns.current_user, params) do
       {:ok, version} ->
+        prev_version = socket.assigns.version
+        mapping = Documents.compute_anchor_mapping(prev_version, version)
+        portable_count = Documents.portable_comment_count(prev_version, mapping)
+
+        port_suggestion =
+          if portable_count > 0 do
+            %{
+              from_label: prev_version.label,
+              to_label: version.label,
+              count: portable_count,
+              mapping: mapping,
+              old_version_id: prev_version.id,
+              new_version_id: version.id
+            }
+          end
+
         {:noreply,
          socket
          |> assign(:show_add_version, false)
          |> assign(:version_form, to_form(%{"label" => "", "raw_html" => ""}, as: :version))
          |> put_flash(:info, "Version #{version.label} added.")
+         |> assign(:port_suggestion, port_suggestion)
          |> load_versions()
          |> then(&select_version(&1, version))}
 
@@ -261,11 +280,37 @@ defmodule DocshareWeb.DocumentLive.Show do
     {:noreply, socket}
   end
 
+  ## Anchor porting events
+
+  def handle_event("port_comments", _params, socket) do
+    %{old_version_id: old_id, new_version_id: new_id, mapping: mapping, to_label: to_label} =
+      socket.assigns.port_suggestion
+
+    old_v = Documents.get_version!(old_id)
+    new_v = Documents.get_version!(new_id)
+    {:ok, count} = Documents.port_comments(old_v, new_v, mapping)
+
+    {:noreply,
+     socket
+     |> assign(:port_suggestion, nil)
+     |> put_flash(:info, "#{count} comment(s) ported to #{to_label}.")
+     |> load_comments()
+     |> load_versions()}
+  end
+
+  def handle_event("dismiss_port", _params, socket) do
+    {:noreply, assign(socket, :port_suggestion, nil)}
+  end
+
   ## PubSub
 
   @impl true
   def handle_info({event, _payload}, socket)
       when event in [:comment_created, :comment_deleted, :comment_updated] do
+    {:noreply, socket |> load_comments() |> load_versions()}
+  end
+
+  def handle_info({:comments_ported, _count}, socket) do
     {:noreply, socket |> load_comments() |> load_versions()}
   end
 
@@ -517,6 +562,14 @@ defmodule DocshareWeb.DocumentLive.Show do
           >
             ⧉ Export comments
           </button>
+          <a
+            href={~p"/docs/#{@doc.token}/versions/#{@version.id}/print"}
+            target="_blank"
+            title="Open a print-ready view — use browser Print → Save as PDF"
+            class="rounded-lg border border-zinc-300 text-zinc-700 px-3 py-2 text-sm font-semibold hover:bg-zinc-50"
+          >
+            ⎙ Print / PDF
+          </a>
           <button
             :if={@owner?}
             phx-click="toggle_add_version"
@@ -539,6 +592,29 @@ defmodule DocshareWeb.DocumentLive.Show do
         (version {@version.version_number} of {length(@versions)}) ·
         comments are specific to this version.
       </p>
+
+      <div
+        :if={@port_suggestion}
+        class="mb-3 flex items-center justify-between gap-4 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm"
+      >
+        <span class="text-indigo-800">
+          <strong>{@port_suggestion.count}</strong>
+          open comment{if @port_suggestion.count != 1, do: "s", else: ""} from
+          <strong>{@port_suggestion.from_label}</strong>
+          can be ported to <strong>{@port_suggestion.to_label}</strong>.
+        </span>
+        <div class="flex shrink-0 gap-2">
+          <button
+            phx-click="port_comments"
+            class="rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white hover:bg-indigo-500"
+          >
+            Port comments
+          </button>
+          <button phx-click="dismiss_port" class="text-xs text-indigo-500 hover:text-indigo-700">
+            Dismiss
+          </button>
+        </div>
+      </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
         <%!-- Document render --%>

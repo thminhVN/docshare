@@ -282,6 +282,139 @@ defmodule DocshareWeb.DocumentLiveTest do
     assert html =~ ~s(data-step="0")
   end
 
+  test "anchor porting: banner appears when open comments can be mapped to the new version", %{
+    conn: conn,
+    user: user
+  } do
+    doc = create_doc(user)
+    v1 = Documents.latest_version(doc)
+
+    {:ok, _} =
+      Documents.create_comment(v1, user, %{
+        "body" => "Needs work",
+        "anchor" => "b0",
+        "anchor_label" => "Hello"
+      })
+
+    {:ok, view, _html} = live(conn, ~p"/docs/#{doc.token}")
+    view |> element("button", "+ New version") |> render_click()
+
+    # New version keeps the same heading — Jaro similarity will be 1.0.
+    html =
+      view
+      |> form("#version-form", version: %{label: "v2", raw_html: "<h1>Hello</h1><p>New content</p>"})
+      |> render_submit()
+
+    assert html =~ "open comment"
+    assert html =~ "v1"
+    assert html =~ "v2"
+    assert html =~ "Port comments"
+  end
+
+  test "anchor porting: clicking Port comments migrates open comments to the new version", %{
+    conn: conn,
+    user: user
+  } do
+    doc = create_doc(user)
+    v1 = Documents.latest_version(doc)
+
+    {:ok, _} =
+      Documents.create_comment(v1, user, %{
+        "body" => "Needs work",
+        "anchor" => "b0",
+        "anchor_label" => "Hello"
+      })
+
+    {:ok, view, _html} = live(conn, ~p"/docs/#{doc.token}")
+    view |> element("button", "+ New version") |> render_click()
+
+    view
+    |> form("#version-form", version: %{label: "v2", raw_html: "<h1>Hello</h1><p>New content</p>"})
+    |> render_submit()
+
+    html = view |> element("button", "Port comments") |> render_click()
+    assert html =~ "comment(s) ported"
+    refute html =~ "Port comments"
+
+    v2 = Documents.latest_version(doc)
+    ported = Documents.list_comments(v2)
+    assert Enum.any?(ported, &(&1.body == "Needs work"))
+  end
+
+  test "anchor porting: dismiss hides the banner without porting", %{conn: conn, user: user} do
+    doc = create_doc(user)
+    v1 = Documents.latest_version(doc)
+
+    {:ok, _} =
+      Documents.create_comment(v1, user, %{
+        "body" => "Should not port",
+        "anchor" => "b0",
+        "anchor_label" => "Hello"
+      })
+
+    {:ok, view, _html} = live(conn, ~p"/docs/#{doc.token}")
+    view |> element("button", "+ New version") |> render_click()
+
+    view
+    |> form("#version-form", version: %{label: "v2", raw_html: "<h1>Hello</h1><p>New content</p>"})
+    |> render_submit()
+
+    html = view |> element("button", "Dismiss") |> render_click()
+    refute html =~ "Port comments"
+
+    v2 = Documents.latest_version(doc)
+    assert Documents.list_comments(v2) == []
+  end
+
+  test "anchor porting: completely different HTML produces no port suggestion", %{
+    conn: conn,
+    user: user
+  } do
+    doc = create_doc(user)
+    v1 = Documents.latest_version(doc)
+
+    {:ok, _} =
+      Documents.create_comment(v1, user, %{
+        "body" => "Some comment",
+        "anchor" => "b0",
+        "anchor_label" => "Hello"
+      })
+
+    {:ok, view, _html} = live(conn, ~p"/docs/#{doc.token}")
+    view |> element("button", "+ New version") |> render_click()
+
+    html =
+      view
+      |> form("#version-form",
+        version: %{label: "v2", raw_html: "<p>Completely different content xyz</p>"}
+      )
+      |> render_submit()
+
+    refute html =~ "Port comments"
+  end
+
+  test "print endpoint renders the version HTML as a standalone page", %{conn: conn, user: user} do
+    doc = create_doc(user)
+    version = Documents.latest_version(doc)
+
+    conn = get(conn, ~p"/docs/#{doc.token}/versions/#{version.id}/print")
+    body = html_response(conn, 200)
+
+    assert body =~ "Hello"
+    assert body =~ "window.print()"
+    refute body =~ "phx-hook"
+    refute body =~ "sandbox=\"allow-scripts\""
+  end
+
+  test "print endpoint is denied to non-collaborators", %{conn: conn} do
+    other = user_fixture()
+    doc = create_doc(other)
+    version = Documents.latest_version(doc)
+
+    conn = get(conn, ~p"/docs/#{doc.token}/versions/#{version.id}/print")
+    assert redirected_to(conn) == ~p"/docs"
+  end
+
   test "document detail can toggle fullscreen", %{conn: conn, user: user} do
     doc = create_doc(user)
     {:ok, view, html} = live(conn, ~p"/docs/#{doc.token}")

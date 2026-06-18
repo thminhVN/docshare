@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>{@doc.title} — {@version.label}</title>
+  {Phoenix.HTML.raw(@head_html)}
+  <style>
+    html { font-family: ui-sans-serif, system-ui, sans-serif; color: #18181b; }
+    body { padding: 1rem 1.5rem; margin: 0; }
+    [data-anchor] { position: static; }
+    [data-anchor]:hover { outline: none; cursor: default; }
+    @media print {
+      @page { margin: 0.75in; }
+      body { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  {Phoenix.HTML.raw(@body_html)}
+  <%= if @has_mermaid do %>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: false });
+    window.addEventListener("load", function () {
+      mermaid.run().then(function () { window.print(); });
+    });
+  </script>
+  <% else %>
+  <script>window.addEventListener("load", function () { window.print(); });</script>
+  <% end %>
+</body>
+</html>

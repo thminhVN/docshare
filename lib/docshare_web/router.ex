@@ -64,6 +64,8 @@ defmodule DocshareWeb.Router do
   scope "/", DocshareWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    get "/docs/:token/versions/:version_id/print", DocumentController, :print
+
     live_session :require_authenticated_user,
       on_mount: [{DocshareWeb.UserAuth, :ensure_authenticated}] do
       live "/users/settings", UserSettingsLive, :edit

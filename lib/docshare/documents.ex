@@ -363,6 +363,92 @@ defmodule Docshare.Documents do
     {:ok, comment}
   end
 
+  ## Anchor porting
+
+  # Blocks whose text similarity is at least this are considered the same block.
+  @similarity_threshold 0.85
+
+  @doc """
+  Maps anchor ids from `old_v` to the closest matching anchor ids in `new_v`
+  using Jaro distance on block text. Greedy bipartite match — each anchor is
+  used at most once on each side. Only pairs with similarity ≥
+  #{@similarity_threshold} are included.
+  """
+  def compute_anchor_mapping(%Version{} = old_v, %Version{} = new_v) do
+    {_body, old_anchors, _head} = Html.process(old_v.raw_html)
+    {_body, new_anchors, _head} = Html.process(new_v.raw_html)
+
+    for(old <- old_anchors, new <- new_anchors,
+      do: {String.jaro_distance(old.text, new.text), old.id, new.id}
+    )
+    |> Enum.sort_by(&(-elem(&1, 0)))
+    |> Enum.reduce({%{}, MapSet.new()}, fn {sim, old_id, new_id}, {mapping, used} ->
+      if sim >= @similarity_threshold and not Map.has_key?(mapping, old_id) and
+           not MapSet.member?(used, new_id) do
+        {Map.put(mapping, old_id, new_id), MapSet.put(used, new_id)}
+      else
+        {mapping, used}
+      end
+    end)
+    |> elem(0)
+  end
+
+  @doc "Count of open comments in `old_v` whose anchors have a match in `mapping`."
+  def portable_comment_count(_old_v, mapping) when map_size(mapping) == 0, do: 0
+
+  def portable_comment_count(%Version{} = old_v, mapping) do
+    keys = Map.keys(mapping)
+
+    Repo.aggregate(
+      from(c in Comment,
+        where: c.version_id == ^old_v.id and c.resolved == false and c.anchor in ^keys
+      ),
+      :count
+    )
+  end
+
+  @doc """
+  Copies open comments from `old_v` to `new_v`, remapping anchor ids via
+  `mapping` and updating anchor labels to match the new block text.
+  Returns `{:ok, count}`.
+  """
+  def port_comments(_old_v, _new_v, mapping) when map_size(mapping) == 0, do: {:ok, 0}
+
+  def port_comments(%Version{} = old_v, %Version{} = new_v, mapping) do
+    {_body, new_anchors, _head} = Html.process(new_v.raw_html)
+    new_label_by_id = Map.new(new_anchors, &{&1.id, &1.label})
+    keys = Map.keys(mapping)
+
+    portables =
+      from(c in Comment,
+        where: c.version_id == ^old_v.id and c.resolved == false and c.anchor in ^keys
+      )
+      |> Repo.all()
+
+    {:ok, count} =
+      Repo.transaction(fn ->
+        Enum.each(portables, fn c ->
+          new_anchor_id = Map.fetch!(mapping, c.anchor)
+
+          %Comment{}
+          |> Comment.changeset(%{
+            "document_id" => new_v.document_id,
+            "version_id" => new_v.id,
+            "author_id" => c.author_id,
+            "anchor" => new_anchor_id,
+            "anchor_label" => Map.get(new_label_by_id, new_anchor_id, c.anchor_label),
+            "body" => c.body
+          })
+          |> Repo.insert!()
+        end)
+
+        length(portables)
+      end)
+
+    broadcast(new_v.document_id, {:comments_ported, count})
+    {:ok, count}
+  end
+
   ## PubSub
 
   def subscribe(document_id),
