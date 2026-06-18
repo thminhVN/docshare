@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Bumps the patch version in mix.exs and updates appup.ex version numbers
+# on every commit to main. The module-level instructions in appup.ex are
+# preserved so you can still hand-edit them for stateful upgrades.
+set -euo pipefail
+
+BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+[[ "$BRANCH" == "main" ]] || exit 0
+
+# Read current version from mix.exs
+OLD_VSN=$(grep -m1 -E '^\s*version:' mix.exs | sed -E 's/.*"([^"]+)".*/\1/')
+[[ -n "$OLD_VSN" ]] || { echo "pre-commit: could not read version from mix.exs" >&2; exit 1; }
+
+# Bump patch
+IFS='.' read -r MAJ MIN PAT <<< "$OLD_VSN"
+NEW_VSN="${MAJ}.${MIN}.$(( PAT + 1 ))"
+
+# Update mix.exs (portable: no sed -i dialect differences)
+sed "s/version: \"${OLD_VSN}\"/version: \"${NEW_VSN}\"/" mix.exs > mix.exs.tmp && mv mix.exs.tmp mix.exs
+
+# Update appup.ex: advance the header version and the from-version.
+# Reads PREV_VSN (the current from-version) from appup.ex so it knows what to replace.
+PREV_VSN=$(grep -o '~c"[^"]*"' appup.ex | sed -n '2p' | sed 's/~c"\(.*\)"/\1/')
+if [[ -n "$PREV_VSN" ]]; then
+  # First pass: header ~c"OLD" -> ~c"NEW"
+  # Second pass: from-version ~c"PREV" -> ~c"OLD"
+  sed "s/~c\"${OLD_VSN}\"/~c\"${NEW_VSN}\"/" appup.ex | \
+    sed "s/~c\"${PREV_VSN}\"/~c\"${OLD_VSN}\"/g" > appup.ex.tmp && mv appup.ex.tmp appup.ex
+fi
+
+git add mix.exs appup.ex
+echo "pre-commit: version bumped $OLD_VSN → $NEW_VSN"
