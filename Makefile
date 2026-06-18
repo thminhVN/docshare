@@ -1,4 +1,4 @@
-.PHONY: dev setup deps server migrate reset test
+.PHONY: dev setup deps server migrate reset test deploy deploy-full
 
 # Start the Phoenix dev server (installs deps + sets up DB on first run)
 dev: deps
@@ -27,3 +27,15 @@ reset:
 # Run the test suite
 test:
 	mix test
+
+# VPS deploy: update the working tree to latest main, then run the deploy script
+deploy:
+	git checkout main
+	git pull --ff-only origin main
+	./deploy.sh
+
+# VPS full deploy: update latest main, then force a full release extract/restart
+deploy-full:
+	git checkout main
+	git pull --ff-only origin main
+	./deploy.sh --full
