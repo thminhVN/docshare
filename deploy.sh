@@ -9,35 +9,29 @@
 #     connections.
 #
 # Layout on the server:
-#   $BASE/build   <- source is rsynced here and `mix release` runs (keeps _build)
+#   current repo  <- source checkout where `mix release` runs (keeps _build)
 #   $BASE/app     <- extracted release root; systemd runs $BASE/app/bin/docshare
 #   $BASE/.env    <- runtime env (EnvironmentFile); also read by runtime.exs
 #
 # Hot upgrades require an appup describing the change: bump `version:` in mix.exs
 # AND update appup.ex for the new version BEFORE deploying. See deploy/HOT_UPGRADE.md.
 #
-# Config: env vars or a gitignored ./deploy.env
-#   SSH_HOST (optional) e.g. docshare@203.0.113.10
-#     - unset: deploy directly on this VPS from the current checkout
-#     - set: rsync this checkout to SSH_HOST and deploy there
-#   BASE     (default /opt/docshare)      SERVICE (default docshare)
-#   SSH_PORT (default 22)                 RESTART (default "sudo systemctl")
+# Optional overrides:
+#   BASE     (default /opt/docshare)
+#   SERVICE  (default docshare)
+#   RESTART  (default "sudo systemctl")
 #
 # Usage: ./deploy.sh [--full]
 #
 set -euo pipefail
 cd "$(dirname "$0")"
 
-[[ -f deploy.env ]] && { source deploy.env; }
-
-SSH_HOST="${SSH_HOST:-}"
 BASE="${BASE:-/opt/docshare}"
 SERVICE="${SERVICE:-docshare}"
-SSH_PORT="${SSH_PORT:-22}"
 RESTART="${RESTART:-sudo systemctl}"
 APP_NAME="docshare"
 
-BUILD_DIR="$BASE/build"
+BUILD_DIR="$PWD"
 APP_DIR="$BASE/app"
 ENV_FILE="$BASE/.env"
 
@@ -51,115 +45,19 @@ step()  { printf '\n\033[1;36m==> %s\033[0m\n' "$1"; }
 VSN="$(grep -m1 -E '^\s*version:' mix.exs | sed -E 's/.*"([^"]+)".*/\1/')"
 [[ -n "$VSN" ]] || { red "Could not read version from mix.exs."; exit 1; }
 
-# --- Local VPS deploy -----------------------------------------------------------
-if [[ -z "$SSH_HOST" ]]; then
-  BUILD_DIR="$PWD"
+green "Deploying $APP_NAME v$VSN locally on this VPS ($BASE)"
 
-  green "Deploying $APP_NAME v$VSN locally on this VPS ($BASE)"
-
-  step "Checking local prerequisites"
-  mkdir -p "$APP_DIR"
-  for bin in mix elixir; do
-    command -v "$bin" >/dev/null || { red "Missing $bin on server (install Erlang/Elixir)."; exit 1; }
-  done
-  [[ -f "$ENV_FILE" ]] || {
-    red "Missing $ENV_FILE. Copy deploy/env.prod.example there and fill it in."
-    exit 1
-  }
-
-  step "Building release v$VSN locally"
-  export MIX_ENV=prod
-  mix local.hex --force >/dev/null
-  mix local.rebar --force >/dev/null
-  mix deps.get --only prod
-  mix compile
-  mix assets.setup
-  mix assets.deploy
-  mix release --overwrite
-
-  CUR_VSN="$(test -x "$APP_DIR/bin/docshare" && "$APP_DIR/bin/docshare" releases 2>/dev/null | awk 'tolower($0) ~ /permanent/ {print $2}' || true)"
-  CUR_VSN="$(echo "$CUR_VSN" | tr -d '[:space:]')"
-
-  if [[ "$FORCE_FULL" == "1" || -z "$CUR_VSN" ]]; then
-    step "Full deploy: extracting release into $APP_DIR"
-    tar="$BUILD_DIR/_build/prod/${APP_NAME}-${VSN}.tar.gz"
-    [[ -f "$tar" ]] || { red "Release tar not found: $tar"; exit 1; }
-    tar xzf "$tar" -C "$APP_DIR"
-    $RESTART restart "$SERVICE"
-    sleep 2
-    $RESTART --no-pager --full status "$SERVICE" | head -n 10 || true
-    green "Full deploy of v$VSN complete."
-
-  elif [[ "$CUR_VSN" == "$VSN" ]]; then
-    red "Running version is already $VSN. Bump version: in mix.exs (and update appup.ex) to upgrade."
-    red "Or run ./deploy.sh --full to re-extract and restart this same version."
-    exit 1
-
-  else
-    step "Hot upgrade: $CUR_VSN -> $VSN (no restart)"
-    target="$BUILD_DIR/_build/prod/rel/${APP_NAME}/releases/${VSN}/${APP_NAME}"
-    fromto="$APP_DIR/releases/${CUR_VSN}/${APP_NAME}"
-    [[ -f "${target}.rel" ]] || { red "Missing new .rel: ${target}.rel"; exit 1; }
-    [[ -f "${fromto}.rel" ]] || { red "Missing old .rel: ${fromto}.rel (is $CUR_VSN still installed?)"; exit 1; }
-
-    echo "-> generating relup ${CUR_VSN} -> ${VSN}"
-    mix forecastle.relup --target "$target" --fromto "$fromto" --outdir "$BUILD_DIR"
-    [[ -f "$BUILD_DIR/relup" ]] || { red "relup was not generated (check appup.ex)."; exit 1; }
-
-    echo "-> rebuilding release to embed relup"
-    mix release --overwrite >/dev/null
-
-    echo "-> installing into the running node"
-    tar="$BUILD_DIR/_build/prod/${APP_NAME}-${VSN}.tar.gz"
-    cp "$tar" "$APP_DIR/releases/${APP_NAME}-${VSN}.tar.gz"
-    "$APP_DIR/bin/${APP_NAME}" unpack "$VSN"
-    "$APP_DIR/bin/${APP_NAME}" install "$VSN"
-    "$APP_DIR/bin/${APP_NAME}" commit "$VSN"
-
-    echo "-> current releases:"
-    "$APP_DIR/bin/${APP_NAME}" releases
-    rm -f "$BUILD_DIR/relup"
-    green "Hot upgrade to v$VSN complete (no downtime)."
-  fi
-
-  green "
-App:  https://${PHX_HOST:-docshare.gatetroy.com}
-Logs: journalctl -u $SERVICE -f
-"
-  exit 0
-fi
-
-# --- Preflight ------------------------------------------------------------------
-command -v rsync >/dev/null || { red "rsync required locally."; exit 1; }
-
-green "Deploying $APP_NAME v$VSN to $SSH_HOST ($BASE)"
-
-SSH=(ssh -p "$SSH_PORT" "$SSH_HOST")
-
-step "Checking server prerequisites"
-"${SSH[@]}" BASE="$BASE" ENV_FILE="$ENV_FILE" bash -se <<'REMOTE'
-set -euo pipefail
-mkdir -p "$BASE/build" "$BASE/app"
+step "Checking local prerequisites"
+mkdir -p "$APP_DIR"
 for bin in mix elixir; do
-  command -v "$bin" >/dev/null || { echo "Missing $bin on server (install Erlang/Elixir)."; exit 1; }
+  command -v "$bin" >/dev/null || { red "Missing $bin on server (install Erlang/Elixir)."; exit 1; }
 done
-[[ -f "$ENV_FILE" ]] || { echo "Missing $ENV_FILE. Copy deploy/env.prod.example there and fill it in."; exit 1; }
-REMOTE
+[[ -f "$ENV_FILE" ]] || {
+  red "Missing $ENV_FILE. Copy deploy/env.prod.example there and fill it in."
+  exit 1
+}
 
-# --- 1. Sync source -------------------------------------------------------------
-step "Syncing source to $BUILD_DIR"
-rsync -az --delete \
-  --exclude '.git/' --exclude '_build/' --exclude 'deps/' \
-  --exclude 'assets/node_modules/' --exclude 'priv/static/assets/' \
-  --exclude 'priv/static/cache_manifest.json' --exclude '.elixir_ls/' \
-  --exclude 'tmp/' --exclude '.env' --exclude 'deploy.env' --exclude 'relup' \
-  -e "ssh -p $SSH_PORT" ./ "$SSH_HOST:$BUILD_DIR/"
-
-# --- 2. Build release tar on the server -----------------------------------------
-step "Building release v$VSN on the server"
-"${SSH[@]}" BUILD_DIR="$BUILD_DIR" bash -se <<'REMOTE'
-set -euo pipefail
-cd "$BUILD_DIR"
+step "Building release v$VSN locally"
 export MIX_ENV=prod
 mix local.hex --force >/dev/null
 mix local.rebar --force >/dev/null
@@ -168,26 +66,19 @@ mix compile
 mix assets.setup
 mix assets.deploy
 mix release --overwrite
-REMOTE
 
-# --- 3. Decide: first install vs hot upgrade ------------------------------------
-CUR_VSN="$("${SSH[@]}" "test -x '$APP_DIR/bin/docshare' && '$APP_DIR/bin/docshare' releases 2>/dev/null | awk 'tolower(\$0) ~ /permanent/ {print \$2}' || true")"
+CUR_VSN="$(test -x "$APP_DIR/bin/docshare" && "$APP_DIR/bin/docshare" releases 2>/dev/null | awk 'tolower($0) ~ /permanent/ {print $2}' || true)"
 CUR_VSN="$(echo "$CUR_VSN" | tr -d '[:space:]')"
 
 if [[ "$FORCE_FULL" == "1" || -z "$CUR_VSN" ]]; then
   # ---------------------- FULL DEPLOY (first install / forced) ------------------
   step "Full deploy: extracting release into $APP_DIR"
-  "${SSH[@]}" BUILD_DIR="$BUILD_DIR" APP_DIR="$APP_DIR" APP_NAME="$APP_NAME" VSN="$VSN" \
-    RESTART="$RESTART" SERVICE="$SERVICE" bash -se <<'REMOTE'
-set -euo pipefail
-tar="$BUILD_DIR/_build/prod/${APP_NAME}-${VSN}.tar.gz"
-[[ -f "$tar" ]] || { echo "Release tar not found: $tar"; exit 1; }
-mkdir -p "$APP_DIR"
-tar xzf "$tar" -C "$APP_DIR"
-$RESTART restart "$SERVICE"
-sleep 2
-$RESTART --no-pager --full status "$SERVICE" | head -n 10 || true
-REMOTE
+  tar="$BUILD_DIR/_build/prod/${APP_NAME}-${VSN}.tar.gz"
+  [[ -f "$tar" ]] || { red "Release tar not found: $tar"; exit 1; }
+  tar xzf "$tar" -C "$APP_DIR"
+  $RESTART restart "$SERVICE"
+  sleep 2
+  $RESTART --no-pager --full status "$SERVICE" | head -n 10 || true
   green "Full deploy of v$VSN complete."
 
 elif [[ "$CUR_VSN" == "$VSN" ]]; then
@@ -198,41 +89,34 @@ elif [[ "$CUR_VSN" == "$VSN" ]]; then
 else
   # ---------------------- HOT UPGRADE (relup, no restart) ----------------------
   step "Hot upgrade: $CUR_VSN -> $VSN (no restart)"
-  "${SSH[@]}" BUILD_DIR="$BUILD_DIR" APP_DIR="$APP_DIR" APP_NAME="$APP_NAME" \
-    VSN="$VSN" CUR_VSN="$CUR_VSN" bash -se <<'REMOTE'
-set -euo pipefail
-cd "$BUILD_DIR"
-export MIX_ENV=prod
+  target="$BUILD_DIR/_build/prod/rel/${APP_NAME}/releases/${VSN}/${APP_NAME}"
+  fromto="$APP_DIR/releases/${CUR_VSN}/${APP_NAME}"
+  [[ -f "${target}.rel" ]] || { red "Missing new .rel: ${target}.rel"; exit 1; }
+  [[ -f "${fromto}.rel" ]] || { red "Missing old .rel: ${fromto}.rel (is $CUR_VSN still installed?)"; exit 1; }
 
-target="$BUILD_DIR/_build/prod/rel/${APP_NAME}/releases/${VSN}/${APP_NAME}"
-fromto="$APP_DIR/releases/${CUR_VSN}/${APP_NAME}"
-[[ -f "${target}.rel" ]] || { echo "Missing new .rel: ${target}.rel"; exit 1; }
-[[ -f "${fromto}.rel" ]] || { echo "Missing old .rel: ${fromto}.rel (is $CUR_VSN still installed?)"; exit 1; }
+  echo "-> generating relup ${CUR_VSN} -> ${VSN}"
+  mix forecastle.relup --target "$target" --fromto "$fromto" --outdir "$BUILD_DIR"
+  [[ -f "$BUILD_DIR/relup" ]] || { red "relup was not generated (check appup.ex)."; exit 1; }
 
-echo "-> generating relup ${CUR_VSN} -> ${VSN}"
-mix forecastle.relup --target "$target" --fromto "$fromto" --outdir "$BUILD_DIR"
-[[ -f "$BUILD_DIR/relup" ]] || { echo "relup was not generated (check appup.ex)."; exit 1; }
+  echo "-> rebuilding release to embed relup"
+  mix release --overwrite >/dev/null
 
-echo "-> rebuilding release to embed relup"
-mix release --overwrite >/dev/null
+  echo "-> installing into the running node"
+  tar="$BUILD_DIR/_build/prod/${APP_NAME}-${VSN}.tar.gz"
+  cp "$tar" "$APP_DIR/releases/${APP_NAME}-${VSN}.tar.gz"
+  "$APP_DIR/bin/${APP_NAME}" unpack "$VSN"
+  "$APP_DIR/bin/${APP_NAME}" install "$VSN"
+  "$APP_DIR/bin/${APP_NAME}" commit "$VSN"
 
-echo "-> installing into the running node"
-tar="$BUILD_DIR/_build/prod/${APP_NAME}-${VSN}.tar.gz"
-cp "$tar" "$APP_DIR/releases/${APP_NAME}-${VSN}.tar.gz"
-"$APP_DIR/bin/${APP_NAME}" unpack  "$VSN"
-"$APP_DIR/bin/${APP_NAME}" install "$VSN"
-"$APP_DIR/bin/${APP_NAME}" commit  "$VSN"
-
-echo "-> current releases:"
-"$APP_DIR/bin/${APP_NAME}" releases
-rm -f "$BUILD_DIR/relup"
-REMOTE
+  echo "-> current releases:"
+  "$APP_DIR/bin/${APP_NAME}" releases
+  rm -f "$BUILD_DIR/relup"
   green "Hot upgrade to v$VSN complete (no downtime)."
 fi
 
 green "
 App:  https://${PHX_HOST:-docshare.gatetroy.com}
-Logs: ssh $SSH_HOST 'journalctl -u $SERVICE -f'
+Logs: journalctl -u $SERVICE -f
 "
 
 # ------------------------------------------------------------------------------
