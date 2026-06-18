@@ -205,10 +205,12 @@ defmodule DocshareWeb.UserAuth do
     if conn.assigns[:current_user] do
       conn
     else
+      return_to = current_path(conn)
+
       conn
       |> put_flash(:error, "You must log in to access this page.")
-      |> maybe_store_return_to()
-      |> redirect(to: ~p"/users/log_in")
+      |> maybe_store_return_to(return_to)
+      |> redirect(to: ~p"/users/log_in?#{[return_to: return_to]}")
       |> halt()
     end
   end
@@ -219,11 +221,46 @@ defmodule DocshareWeb.UserAuth do
     |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
   end
 
-  defp maybe_store_return_to(%{method: "GET"} = conn) do
-    put_session(conn, :user_return_to, current_path(conn))
+  defp maybe_store_return_to(%{method: "GET"} = conn, return_to) do
+    put_session(conn, :user_return_to, return_to)
   end
 
-  defp maybe_store_return_to(conn), do: conn
+  defp maybe_store_return_to(conn, _return_to), do: conn
+
+  def local_return_to(return_to) when is_binary(return_to) do
+    uri = URI.parse(return_to)
+
+    if uri.scheme in [nil, ""] and uri.host in [nil, ""] and
+         String.starts_with?(return_to, "/") and not String.starts_with?(return_to, "//") do
+      return_to
+    end
+  end
+
+  def local_return_to(_return_to), do: nil
+
+  def invited_email(params, return_to) do
+    direct_email = Map.get(params, "invited_email")
+
+    if present?(direct_email) do
+      direct_email
+    else
+      invited_email_from_return_to(return_to)
+    end
+  end
+
+  defp invited_email_from_return_to(return_to) when is_binary(return_to) do
+    case URI.parse(return_to).query do
+      nil -> nil
+      query -> URI.decode_query(query) |> Map.get("invited_email") |> blank_to_nil()
+    end
+  end
+
+  defp invited_email_from_return_to(_return_to), do: nil
+
+  defp blank_to_nil(value) when value in [nil, ""], do: nil
+  defp blank_to_nil(value), do: value
+
+  defp present?(value), do: is_binary(value) and value != ""
 
   defp signed_in_path(_conn), do: ~p"/"
 end

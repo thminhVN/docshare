@@ -114,10 +114,29 @@ defmodule DocshareWeb.DocumentLiveTest do
     assert html =~ "Invitation sent to friend@example.com"
     assert [%{email: "friend@example.com"}] = Documents.list_collaborators(doc)
 
-    assert_email_sent(
-      to: "friend@example.com",
-      from: {"DocShare", "noreply@gatetroy.com"}
-    )
+    assert_email_sent(fn email ->
+      assert Enum.any?(email.to, fn
+               {_name, "friend@example.com"} -> true
+               "friend@example.com" -> true
+               _other -> false
+             end)
+
+      assert email.from == {"DocShare", "noreply@gatetroy.com"}
+      assert email.text_body =~ "/docs/#{doc.token}?invited_email=friend%40example.com"
+      assert email.html_body =~ "/docs/#{doc.token}?invited_email=friend%40example.com"
+    end)
+  end
+
+  test "emailed document URL redirects logged-out users to login with return_to", %{user: user} do
+    doc = create_doc(user)
+
+    conn = get(build_conn(), ~p"/docs/#{doc.token}?invited_email=friend@example.com")
+
+    assert redirected_to(conn) ==
+             "/users/log_in?return_to=%2Fdocs%2F#{doc.token}%3Finvited_email%3Dfriend%40example.com"
+
+    assert get_session(conn, :user_return_to) ==
+             "/docs/#{doc.token}?invited_email=friend@example.com"
   end
 
   test "owner can resend an invitation to an existing collaborator", %{conn: conn, user: user} do

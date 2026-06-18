@@ -3,6 +3,7 @@ defmodule DocshareWeb.UserRegistrationLive do
 
   alias Docshare.Accounts
   alias Docshare.Accounts.User
+  alias DocshareWeb.UserAuth
 
   def render(assigns) do
     ~H"""
@@ -11,7 +12,7 @@ defmodule DocshareWeb.UserRegistrationLive do
         Register for an account
         <:subtitle>
           Already registered?
-          <.link navigate={~p"/users/log_in"} class="font-semibold text-brand hover:underline">
+          <.link navigate={@login_path} class="font-semibold text-brand hover:underline">
             Log in
           </.link>
           to your account now.
@@ -24,7 +25,7 @@ defmodule DocshareWeb.UserRegistrationLive do
         phx-submit="save"
         phx-change="validate"
         phx-trigger-action={@trigger_submit}
-        action={~p"/users/log_in?_action=registered"}
+        action={@registration_login_path}
         method="post"
       >
         <.error :if={@check_errors}>
@@ -42,12 +43,22 @@ defmodule DocshareWeb.UserRegistrationLive do
     """
   end
 
-  def mount(_params, _session, socket) do
-    changeset = Accounts.change_user_registration(%User{})
+  def mount(params, session, socket) do
+    return_to =
+      UserAuth.local_return_to(params["return_to"]) ||
+        UserAuth.local_return_to(session["user_return_to"])
+
+    invited_email = UserAuth.invited_email(params, return_to)
+    changeset = Accounts.change_user_registration(%User{email: invited_email})
 
     socket =
       socket
       |> assign(trigger_submit: false, check_errors: false)
+      |> assign(
+        login_path: auth_path(~p"/users/log_in", return_to, invited_email),
+        registration_login_path:
+          auth_path(~p"/users/log_in", return_to, invited_email, [{"_action", "registered"}])
+      )
       |> assign_form(changeset)
 
     {:ok, socket, temporary_assigns: [form: nil]}
@@ -83,4 +94,22 @@ defmodule DocshareWeb.UserRegistrationLive do
       assign(socket, form: form)
     end
   end
+
+  defp auth_path(path, return_to, invited_email),
+    do: auth_path(path, return_to, invited_email, [])
+
+  defp auth_path(path, return_to, invited_email, query) do
+    query =
+      query
+      |> maybe_put_query("return_to", return_to)
+      |> maybe_put_query("invited_email", invited_email)
+
+    path_with_query(path, query)
+  end
+
+  defp maybe_put_query(query, _key, nil), do: query
+  defp maybe_put_query(query, key, value), do: [{key, value} | query]
+
+  defp path_with_query(path, []), do: path
+  defp path_with_query(path, query), do: path <> "?" <> URI.encode_query(query)
 end

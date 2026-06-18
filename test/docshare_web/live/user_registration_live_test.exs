@@ -12,6 +12,24 @@ defmodule DocshareWeb.UserRegistrationLiveTest do
       assert html =~ "Log in"
     end
 
+    test "preserves return_to in login action and login link", %{conn: conn} do
+      {:ok, _lv, html} = live(conn, ~p"/users/register?return_to=/docs/invite-token")
+
+      assert html =~
+               ~s(action="/users/log_in?return_to=%2Fdocs%2Finvite-token&amp;_action=registered")
+
+      assert html =~ ~s(href="/users/log_in?return_to=%2Fdocs%2Finvite-token")
+    end
+
+    test "prefills invited email from return_to document URL", %{conn: conn} do
+      return_to = "/docs/invite-token?invited_email=friend@example.com"
+      {:ok, _lv, html} = live(conn, ~p"/users/register?return_to=#{return_to}")
+
+      assert html =~ ~s(value="friend@example.com")
+      assert html =~ "invited_email=friend%40example.com"
+      assert html =~ "_action=registered"
+    end
+
     test "redirects if already logged in", %{conn: conn} do
       result =
         conn
@@ -53,6 +71,17 @@ defmodule DocshareWeb.UserRegistrationLiveTest do
       assert response =~ email
       assert response =~ "Settings"
       assert response =~ "Log out"
+    end
+
+    test "creates account and redirects to return_to", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/users/register?return_to=/docs/invite-token")
+
+      email = unique_user_email()
+      form = form(lv, "#registration_form", user: valid_user_attributes(email: email))
+      render_submit(form)
+      conn = follow_trigger_action(form, conn)
+
+      assert redirected_to(conn) == "/docs/invite-token"
     end
 
     test "renders errors for duplicated email", %{conn: conn} do

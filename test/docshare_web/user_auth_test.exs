@@ -231,7 +231,7 @@ defmodule DocshareWeb.UserAuthTest do
       conn = conn |> fetch_flash() |> UserAuth.require_authenticated_user([])
       assert conn.halted
 
-      assert redirected_to(conn) == ~p"/users/log_in"
+      assert redirected_to(conn) == "/users/log_in?return_to=%2F"
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
                "You must log in to access this page."
@@ -245,6 +245,7 @@ defmodule DocshareWeb.UserAuthTest do
 
       assert halted_conn.halted
       assert get_session(halted_conn, :user_return_to) == "/foo"
+      assert redirected_to(halted_conn) == "/users/log_in?return_to=%2Ffoo"
 
       halted_conn =
         %{conn | path_info: ["foo"], query_string: "bar=baz"}
@@ -253,6 +254,7 @@ defmodule DocshareWeb.UserAuthTest do
 
       assert halted_conn.halted
       assert get_session(halted_conn, :user_return_to) == "/foo?bar=baz"
+      assert redirected_to(halted_conn) == "/users/log_in?return_to=%2Ffoo%3Fbar%3Dbaz"
 
       halted_conn =
         %{conn | path_info: ["foo"], query_string: "bar", method: "POST"}

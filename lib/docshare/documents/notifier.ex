@@ -5,7 +5,9 @@ defmodule Docshare.Documents.Notifier do
   alias Docshare.Mailer
 
   def deliver_invitation(collaborator, document, inviter) do
-    url = DocshareWeb.Endpoint.url() <> "/docs/#{document.token}"
+    url =
+      DocshareWeb.Endpoint.url() <>
+        "/docs/#{document.token}?#{URI.encode_query(invited_email: collaborator.email)}"
 
     email =
       new()

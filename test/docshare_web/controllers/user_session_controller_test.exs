@@ -54,6 +54,31 @@ defmodule DocshareWeb.UserSessionControllerTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Welcome back!"
     end
 
+    test "logs the user in with return_to param", %{conn: conn, user: user} do
+      conn =
+        post(conn, ~p"/users/log_in?return_to=/docs/invite-token", %{
+          "user" => %{
+            "email" => user.email,
+            "password" => valid_user_password()
+          }
+        })
+
+      assert redirected_to(conn) == "/docs/invite-token"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Welcome back!"
+    end
+
+    test "ignores external return_to params", %{conn: conn, user: user} do
+      conn =
+        post(conn, ~p"/users/log_in?return_to=https://evil.example/docs/invite-token", %{
+          "user" => %{
+            "email" => user.email,
+            "password" => valid_user_password()
+          }
+        })
+
+      assert redirected_to(conn) == ~p"/"
+    end
+
     test "login following registration", %{conn: conn, user: user} do
       conn =
         conn
@@ -66,6 +91,19 @@ defmodule DocshareWeb.UserSessionControllerTest do
         })
 
       assert redirected_to(conn) == ~p"/"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Account created successfully"
+    end
+
+    test "login following registration with return_to param", %{conn: conn, user: user} do
+      conn =
+        post(conn, ~p"/users/log_in?_action=registered&return_to=/docs/invite-token", %{
+          "user" => %{
+            "email" => user.email,
+            "password" => valid_user_password()
+          }
+        })
+
+      assert redirected_to(conn) == "/docs/invite-token"
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Account created successfully"
     end
 
@@ -92,6 +130,20 @@ defmodule DocshareWeb.UserSessionControllerTest do
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
       assert redirected_to(conn) == ~p"/users/log_in"
+    end
+
+    test "preserves invite params with invalid credentials", %{conn: conn} do
+      conn =
+        post(
+          conn,
+          "/users/log_in?return_to=/docs/invite-token?invited_email=friend@example.com&invited_email=friend@example.com",
+          %{"user" => %{"email" => "friend@example.com", "password" => "invalid_password"}}
+        )
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
+
+      assert redirected_to(conn) ==
+               "/users/log_in?invited_email=friend%40example.com&return_to=%2Fdocs%2Finvite-token%3Finvited_email%3Dfriend%40example.com"
     end
   end
 
