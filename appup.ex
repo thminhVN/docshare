@@ -16,15 +16,17 @@
 # `mix castle.relup` can usually infer simple module loads for you; you mainly
 # hand-write entries for GenServers/LiveViews that hold state.
 #
-# Example for the next release (0.2.0 from 0.1.0):
+# Example for the next release, e.g. 0.2.0 upgrading from 0.1.0. Versions are
+# charlists; the data block below uses the ~c sigil, but this example avoids it
+# so the auto-bump pre-commit hook only rewrites the real version entries:
 #
-#   {~c"0.2.0",
-#    [{~c"0.1.0", [{:load_module, DocshareWeb.DocumentLive.Show}]}],
-#    [{~c"0.1.0", [{:load_module, DocshareWeb.DocumentLive.Show}]}]}
+#   {'0.2.0',
+#    [{'0.1.0', [{:load_module, DocshareWeb.DocumentLive.Show}]}],
+#    [{'0.1.0', [{:load_module, DocshareWeb.DocumentLive.Show}]}]}
 
-{~c"0.1.4",
+{~c"0.1.5",
  [
-   {~c"0.1.3",
+   {~c"0.1.4",
     [
       {:load_module, DocshareWeb.Layouts},
       {:load_module, DocshareWeb.PageHTML},
@@ -32,7 +34,7 @@
     ]}
  ],
  [
-   {~c"0.1.3",
+   {~c"0.1.4",
     [
       {:load_module, DocshareWeb.Layouts},
       {:load_module, DocshareWeb.PageHTML},

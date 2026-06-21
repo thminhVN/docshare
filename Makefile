@@ -1,4 +1,4 @@
-.PHONY: dev setup deps server migrate reset test deploy deploy-full hooks
+.PHONY: dev setup deps server migrate reset test deploy deploy-full hooks push
 
 # Start the Phoenix dev server (installs deps + sets up DB on first run)
 dev: deps
@@ -12,6 +12,11 @@ setup:
 hooks:
 	git config core.hooksPath .githooks
 	@echo "Git hooks installed — version will auto-bump on commits to main."
+
+# Push to origin, ensuring the auto-bump hook is installed first so the
+# version is bumped on commit. Commit your work before running this.
+push: hooks
+	git push
 
 # Fetch Elixir dependencies
 deps:
