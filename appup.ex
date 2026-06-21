@@ -22,18 +22,20 @@
 #    [{~c"0.1.0", [{:load_module, DocshareWeb.DocumentLive.Show}]}],
 #    [{~c"0.1.0", [{:load_module, DocshareWeb.DocumentLive.Show}]}]}
 
-{~c"0.1.3",
+{~c"0.1.4",
  [
-   {~c"0.1.2",
+   {~c"0.1.3",
     [
-      {:load_module, Docshare.Application},
-      {:load_module, Docshare.Release}
+      {:load_module, DocshareWeb.Layouts},
+      {:load_module, DocshareWeb.PageHTML},
+      {:load_module, DocshareWeb.DocumentLive.Show}
     ]}
  ],
  [
-   {~c"0.1.2",
+   {~c"0.1.3",
     [
-      {:load_module, Docshare.Application},
-      {:load_module, Docshare.Release}
+      {:load_module, DocshareWeb.Layouts},
+      {:load_module, DocshareWeb.PageHTML},
+      {:load_module, DocshareWeb.DocumentLive.Show}
     ]}
  ]}

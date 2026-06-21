@@ -18,6 +18,7 @@ defmodule DocshareWeb.DocumentLive.Show do
         |> assign(:owner?, Documents.owner?(doc, user))
         |> assign(:selected_anchor, nil)
         |> assign(:selected_label, nil)
+        |> assign(:show_comments, false)
         |> assign(:show_share, false)
         |> assign(:show_add_version, false)
         |> assign(:show_export, false)
@@ -67,6 +68,7 @@ defmodule DocshareWeb.DocumentLive.Show do
     |> assign(:frame, Html.frame(processed, head_html))
     |> assign(:selected_anchor, nil)
     |> assign(:selected_label, nil)
+    |> assign(:show_comments, false)
     |> load_comments()
     |> push_event("ds:select", %{anchor: nil})
   end
@@ -189,7 +191,16 @@ defmodule DocshareWeb.DocumentLive.Show do
      socket
      |> assign(:selected_anchor, anchor)
      |> assign(:selected_label, params["label"])
+     |> assign(:show_comments, true)
      |> push_event("ds:select", %{anchor: anchor})}
+  end
+
+  def handle_event("open_comments", _params, socket) do
+    {:noreply, assign(socket, :show_comments, true)}
+  end
+
+  def handle_event("close_comments", _params, socket) do
+    {:noreply, assign(socket, :show_comments, false)}
   end
 
   def handle_event("clear_anchor", _params, socket) do
@@ -464,19 +475,19 @@ defmodule DocshareWeb.DocumentLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex flex-col h-[calc(100vh-7rem)]">
+    <div class="flex flex-col lg:h-[calc(100vh-7rem)]">
       <div class="flex items-center justify-between pb-3 border-b mb-3 gap-3 flex-wrap">
         <div>
           <.link navigate={~p"/docs"} class="text-sm text-zinc-500 hover:underline">← All documents</.link>
           <h1 class="text-xl font-bold">{@doc.title}</h1>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           <%!-- Version selector --%>
           <form id="version-select" phx-change="select_version">
             <select
               name="id"
-              class="rounded-lg border-zinc-300 text-sm py-2 pr-8 focus:border-indigo-500 focus:ring-indigo-500"
+              class="rounded-lg border-2 border-indigo-400 bg-white text-sm font-medium text-zinc-800 py-2 pr-8 focus:border-indigo-500 focus:ring-indigo-500"
             >
               <option
                 :for={v <- @versions}
@@ -557,14 +568,14 @@ defmodule DocshareWeb.DocumentLive.Show do
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:flex-1 lg:min-h-0">
         <%!-- Document render --%>
         <div
           class={[
             "border bg-white overflow-hidden",
             if(@fullscreen,
               do: "fixed inset-0 z-50 rounded-none",
-              else: "relative lg:col-span-2 rounded-lg min-h-0"
+              else: "relative lg:col-span-2 rounded-lg h-[78vh] lg:h-auto lg:min-h-0"
             )
           ]}
           phx-window-keydown={@fullscreen && "toggle_fullscreen"}
@@ -589,11 +600,72 @@ defmodule DocshareWeb.DocumentLive.Show do
           ></iframe>
         </div>
 
-        <%!-- Comments panel --%>
-        <div class="border rounded-lg flex flex-col min-h-0 bg-zinc-50">
-          <div class="p-3 border-b bg-white rounded-t-lg">
-            <h2 class="font-semibold text-sm">Comments on {@version.label}</h2>
-            <p class="text-xs text-zinc-500">Click a part of the document to comment on it.</p>
+        <%!-- Floating button to open the comments popup on mobile --%>
+        <button
+          :if={!@fullscreen and !@show_comments}
+          phx-click="open_comments"
+          class="lg:hidden fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-indigo-500"
+        >
+          <svg
+            class="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M7.5 18.5 4 21V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v9a2.5 2.5 0 0 1-2.5 2.5z" />
+            <path d="M8 9.5h8M8 13h5" />
+          </svg>
+          Comments
+          <span
+            :if={@comments != []}
+            class="rounded-full bg-white/25 px-1.5 text-xs font-semibold"
+          >
+            {length(@comments)}
+          </span>
+        </button>
+
+        <%!-- Mobile backdrop for the comments popup --%>
+        <div
+          :if={@show_comments}
+          phx-click="close_comments"
+          class="lg:hidden fixed inset-0 z-40 bg-black/40"
+        >
+        </div>
+
+        <%!-- Comments panel: side column on desktop, bottom-sheet popup on mobile --%>
+        <div class={[
+          "flex flex-col min-h-0 border bg-zinc-50",
+          "fixed inset-x-0 bottom-0 z-50 h-[85vh] rounded-t-2xl shadow-2xl transition-transform duration-200 ease-out",
+          @show_comments && "translate-y-0" || "translate-y-full",
+          "lg:static lg:z-auto lg:h-auto lg:translate-y-0 lg:rounded-lg lg:shadow-none lg:transition-none"
+        ]}>
+          <div class="flex items-start justify-between gap-2 p-3 border-b bg-white rounded-t-2xl lg:rounded-t-lg">
+            <div>
+              <h2 class="font-semibold text-sm">Comments on {@version.label}</h2>
+              <p class="text-xs text-zinc-500">Click a part of the document to comment on it.</p>
+            </div>
+            <button
+              phx-click="close_comments"
+              aria-label="Close comments"
+              class="lg:hidden -mr-1 -mt-1 rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
+            >
+              <svg
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
           </div>
 
           <div class="flex-1 overflow-y-auto p-3 space-y-4">
@@ -765,7 +837,7 @@ defmodule DocshareWeb.DocumentLive.Show do
             <button phx-click="toggle_diff" class="text-zinc-400 hover:text-zinc-700">✕</button>
           </div>
 
-          <form id="diff-form" phx-change="update_diff" class="flex items-center gap-2 text-sm mb-3">
+          <form id="diff-form" phx-change="update_diff" class="flex flex-wrap items-center gap-2 text-sm mb-3">
             <select
               name="a"
               class="rounded-md border-zinc-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
@@ -789,12 +861,12 @@ defmodule DocshareWeb.DocumentLive.Show do
             </span>
           </form>
 
-          <div class="flex-1 min-h-0 flex gap-3">
+          <div class="flex-1 min-h-0 flex flex-col lg:flex-row gap-3">
             <%!-- Step sidebar: jump to each change --%>
             <nav
               id="diff-nav"
               phx-hook="DiffNav"
-              class="w-56 shrink-0 overflow-y-auto rounded-md border bg-zinc-50 p-2 text-xs"
+              class="w-full lg:w-56 shrink-0 max-h-32 lg:max-h-none overflow-y-auto rounded-md border bg-zinc-50 p-2 text-xs"
             >
               <p class="font-semibold text-zinc-500 uppercase tracking-wide px-1 mb-1">
                 Changes ({length(@diff_steps)})
@@ -955,8 +1027,29 @@ defmodule DocshareWeb.DocumentLive.Show do
 
   defp version_option_label(version, counts) do
     n = Map.get(counts, version.id, 0)
-    base = "#{version.label} — #{Calendar.strftime(version.inserted_at, "%Y-%m-%d %H:%M")}"
+    base = "#{version.label} — #{relative_time(version.inserted_at)}"
     if n > 0, do: "#{base} (#{n} 💬)", else: base
+  end
+
+  # Human-friendly "x ago" for a DateTime/NaiveDateTime (stored UTC), falling
+  # back to a date once the gap is large.
+  defp relative_time(%DateTime{} = at) do
+    relative_time_from_seconds(DateTime.diff(DateTime.utc_now(), at, :second), at)
+  end
+
+  defp relative_time(%NaiveDateTime{} = at) do
+    relative_time_from_seconds(NaiveDateTime.diff(NaiveDateTime.utc_now(), at, :second), at)
+  end
+
+  defp relative_time_from_seconds(secs, at) do
+    cond do
+      secs < 60 -> "just now"
+      secs < 3600 -> "#{div(secs, 60)}m ago"
+      secs < 86_400 -> "#{div(secs, 3600)}h ago"
+      secs < 604_800 -> "#{div(secs, 86_400)}d ago"
+      secs < 2_592_000 -> "#{div(secs, 604_800)}w ago"
+      true -> Calendar.strftime(at, "%Y-%m-%d")
+    end
   end
 
   attr :comment, :map, required: true

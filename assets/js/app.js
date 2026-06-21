@@ -155,6 +155,35 @@ topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
+// Mobile slide-over menu (lives in the static root layout, outside any LiveView).
+function setMobileMenu(open) {
+  const root = document.getElementById("mobile-menu")
+  if (!root) return
+  const panel = root.querySelector("[data-menu-panel]")
+  const overlay = root.querySelector("[data-menu-overlay]")
+  if (open) {
+    root.classList.remove("hidden")
+    document.body.classList.add("overflow-hidden")
+    requestAnimationFrame(() => {
+      panel.classList.remove("translate-x-full")
+      overlay.classList.remove("opacity-0")
+    })
+  } else {
+    panel.classList.add("translate-x-full")
+    overlay.classList.add("opacity-0")
+    document.body.classList.remove("overflow-hidden")
+    setTimeout(() => root.classList.add("hidden"), 200)
+  }
+}
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest("[data-menu-toggle]")) setMobileMenu(true)
+  else if (e.target.closest("[data-menu-close]")) setMobileMenu(false)
+})
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") setMobileMenu(false)
+})
+
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 
